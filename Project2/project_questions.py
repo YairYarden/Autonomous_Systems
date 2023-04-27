@@ -1,5 +1,8 @@
 import os
 import numpy as np
+
+import data_loader
+import graphs
 from data_preparation import *
 import random
 
@@ -35,7 +38,17 @@ class ProjectQuestions:
         - yaw_vf_wz_noise - yaw_vf_wz with Gaussian noise in vf (sigma 2.0) and wz (sigma 0.2)
         """
         self.dataset = dataset
-        self.enu, self.times, self.yaw_vf_wz = build_GPS_trajectory(dataset) #TODO (hint- use build_GPS_trajectory)
+
+        data_oxts = data_loader.DataLoader.get_gps_imu(dataset)
+        lats = [i.packet.lat for i in data_oxts]
+        lons = [i.packet.lon for i in data_oxts]
+        alts = [i.packet.alt for i in data_oxts]
+        self.lla = np.array([lats, lons, alts]).T
+
+        self.enu = extract_ENU_from_LLA(lats, lons, alts)
+
+        _, self.times, self.yaw_vf_wz = build_GPS_trajectory(dataset) #TODO (hint- use build_GPS_trajectory)
+
 
         # add noise to the trajectory
         self.sigma_xy = 3 #TODO
@@ -44,10 +57,12 @@ class ProjectQuestions:
 
         num_examples = self.enu.shape[0]
 
-        self.enu_noise = np.concatenate([np.random.normal(0, self.sigma_xy, size=(num_examples, 2)), np.zeros((num_examples, 1))], axis=1) #TODO
-        self.yaw_vf_wz_noise= np.concatenate([np.zeros((num_examples, 1)),
-                                              np.random.normal(0, self.sigma_vf, size=(num_examples, 1)),
-                                              np.random.normal(0, self.sigma_wz, size=(num_examples, 1))], axis=1) #TODO
+        self.enu_noise = self.enu + np.concatenate([np.random.normal(0, self.sigma_xy, size=(num_examples, 2)), np.zeros((num_examples, 1))], axis=1) #TODO
+
+        self.yaw_vf_wz_noise = self.yaw_vf_wz + np.concatenate([np.zeros((num_examples, 1)),
+                                                np.random.normal(0, self.sigma_vf, size=(num_examples, 1)),
+                                                np.random.normal(0, self.sigma_wz, size=(num_examples, 1))], axis=1) #TODO
+
 
     def Q1(self):
         """
@@ -55,11 +70,13 @@ class ProjectQuestions:
         Load data from the KITTI dataset, add noise to the ground truth GPS values, and apply a Kalman filter to the noisy data (enu).
         """
 
-	    # "TODO":
+        # Plot Global coordinates (LLA)
+        graphs.plot_trajectory_and_height(self.lla, title1="Latitude - Longtitude GT", xlabel1="Latitude[deg]", ylabel1="Longtitude[deg]", title2="Ältitude GT", xlabel2="Frame number", ylabel2="Altitude[m]")
+        # Plot ENU coordinates
+        graphs.plot_trajectory_and_height(self.enu, title1="East - North GT", xlabel1="East[m]", ylabel1="North[m]", title2="Up GT", xlabel2="Frame number", ylabel2="Up[m]")
 
-        # sigma_x_y, sigma_Qn =
-
-        # build_ENU_from_GPS_trajectory
+        # Plot ENU coordinates with noise
+        graphs.plot_trajectory_with_noise(self.enu, self.enu_noise, title="ENU - GT & Noised", xlabel="x[m]", ylabel="y[m]", legend_gt="GT", legend_noise="Noised")
 
         # KalmanFilter
 

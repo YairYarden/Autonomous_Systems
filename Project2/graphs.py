@@ -193,7 +193,7 @@ def plot_trajectory_with_noise(pos_xy_gt, pos_xy_noise, title, xlabel, ylabel, l
     fig, ax = plt.subplots()
     ax.plot(pos_xy_gt[:, 0], pos_xy_gt[:, 1], 'b')
     ax.scatter(pos_xy_noise[:, 0], pos_xy_noise[:, 1],c='r',marker='.')
-    ax.set_aspect('equal', adjustable='box')
+    # ax.set_aspect('equal', adjustable='box')
     ax.set_title(title, fontsize=20)
     ax.set_xlabel(xlabel, fontsize=20)
     ax.set_ylabel(ylabel, fontsize=20)
@@ -210,7 +210,7 @@ def plot_trajectory_and_height(locations, title1, xlabel1, ylabel1, title2, xlab
     """
     fig, (ax1, ax2) = plt.subplots(1, 2)
     ax1.plot(locations[:, 0], locations[:, 1], 'b')
-    ax1.set_aspect('equal', adjustable='box')
+    # ax1.set_aspect('equal', adjustable='box')
     ax1.set_title(title1, fontsize=20)
     ax1.set_xlabel(xlabel1, fontsize=20)
     ax1.set_ylabel(ylabel1, fontsize=20)
