@@ -4,7 +4,12 @@
 # Kalman filter, Extended Kalman Filter and EKF-SLAM. 
 
 import os
+
+import numpy as np
+
 from data_loader import DataLoader
+from project_questions import ProjectQuestions
+
 # from project_questions import ProjectQuestions
 
 
@@ -18,8 +23,10 @@ if __name__ == "__main__":
 
     dataset = DataLoader(basedir, date, drive, dat_dir)
 
-    # project = ProjectQuestions(dataset)
-    # project.run()
+    project = ProjectQuestions(dataset)
+    project.run()
 
-    print("hello world")
+    # arr = np.concatenate([np.random.normal(size=(10, 1, 2)), np.zeros((10, 1, 1))], axis=2)
+
+    # print(arr.shape)
 

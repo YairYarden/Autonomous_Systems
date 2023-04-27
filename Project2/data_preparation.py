@@ -45,7 +45,7 @@ def build_GPS_trajectory(dataset):
                                                 [1, 0, 0],
                                                 [0, 0, -1]]))
         xNorth_yEast_zDown= np.array(car_movement.calc_movement(gps_imu))
-        
+        yEast_xNorth_zUp = NED2ENU(xNorth_yEast_zDown)
         
         
         if locations is None:
