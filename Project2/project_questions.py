@@ -11,7 +11,7 @@ import random
 # import matplotlib.pyplot as plt
 # from matplotlib import animation
 # import graphs
-# from kalman_filter import KalmanFilter, ExtendedKalmanFilter, ExtendedKalmanFilterSLAM
+from kalman_filter import KalmanFilter #, ExtendedKalmanFilter, ExtendedKalmanFilterSLAM
 
 
 random.seed(123)
@@ -48,7 +48,7 @@ class ProjectQuestions:
         self.enu = extract_ENU_from_LLA(lats, lons, alts)
 
         _, self.times, self.yaw_vf_wz = build_GPS_trajectory(dataset) #TODO (hint- use build_GPS_trajectory)
-
+        self.delta_t = self.times[1] - self.times[0]
 
         # add noise to the trajectory
         self.sigma_xy = 3 #TODO
@@ -57,11 +57,11 @@ class ProjectQuestions:
 
         num_examples = self.enu.shape[0]
 
-        self.enu_noise = self.enu + np.concatenate([np.random.normal(0, self.sigma_xy, size=(num_examples, 2)), np.zeros((num_examples, 1))], axis=1) #TODO
+        self.enu_noise = self.enu + np.concatenate([np.random.normal(0, self.sigma_xy, size=(num_examples, 2)), np.zeros((num_examples, 1))], axis=1)
 
         self.yaw_vf_wz_noise = self.yaw_vf_wz + np.concatenate([np.zeros((num_examples, 1)),
                                                 np.random.normal(0, self.sigma_vf, size=(num_examples, 1)),
-                                                np.random.normal(0, self.sigma_wz, size=(num_examples, 1))], axis=1) #TODO
+                                                np.random.normal(0, self.sigma_wz, size=(num_examples, 1))], axis=1)
 
 
     def Q1(self):
@@ -79,8 +79,12 @@ class ProjectQuestions:
         graphs.plot_trajectory_with_noise(self.enu, self.enu_noise, title="ENU - GT & Noised", xlabel="x[m]", ylabel="y[m]", legend_gt="GT", legend_noise="Noised")
 
         # KalmanFilter
+        sigma_n = 1
+        kf = KalmanFilter(self.enu_noise[:, 0:2], self.times, self.sigma_xy, sigma_n, self.delta_t)
+        enu_kf, cov_mat = kf.run(variance_amp=3)
 
         # calc_RMSE_maxE(locations_GT, locations_kf)
+        RMSE, maxE = kf.calc_RMSE_maxE(self.enu[:, 0:2], enu_kf)
 
         # build_animation (hint- graphs.build_animation)
 

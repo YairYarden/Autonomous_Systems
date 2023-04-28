@@ -6,7 +6,7 @@
 import os
 
 import numpy as np
-
+from kalman_filter import KalmanFilter
 from data_loader import DataLoader
 from project_questions import ProjectQuestions
 
@@ -25,3 +25,9 @@ if __name__ == "__main__":
 
     project = ProjectQuestions(dataset)
     project.run()
+
+    # a = [1,2]
+    # b = [3,4]
+    # c = np.hstack((a,b))
+    # print(c)
+    # print(c.shape)
