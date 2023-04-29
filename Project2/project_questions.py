@@ -119,78 +119,84 @@ class ProjectQuestions:
 
 
 
-    # def Q2(self):
-    #
-    #     """
-    #     That function runs the code of question 2 of the project.
-    #     Load data from the KITTI dataset, add noise to the ground truth GPS values, yaw rate, and velocities, and apply a Kalman filter to the noisy data.
-    #     """
-    #
-    #     # plot yaw, yaw rate and forward velocity
-    #
-    #     # sigma_samples =
-    #
-    #     # sigma_vf, sigma_omega =
-    #
-    #     # build_LLA_GPS_trajectory
-    #
-    #     # add_gaussian_noise to u and measurments (locations_gt[:,i], sigma_samples[i])
-    #
-    #      # plot vf and wz with and without noise
-    #
-    #     # ekf = ExtendedKalmanFilter(sigma_samples, sigma_vf, sigma_omega)
-    #     # locations_ekf, sigma_x_xy_yx_y_t = ekf.run(locations_noised, times, yaw_vf_wz_noised, do_only_predict=False)
-    #
-    #     # RMSE, maxE = ekf.calc_RMSE_maxE(locations_gt, locations_ekf)
-    #
-    #     # print the maxE and RMSE
-    #
-    #     # draw the trajectories
-    #
-    #     # draw the error
-    #
-    #     #v.	Plot the estimated error of x-y-θ values separately and corresponded sigma value along the trajectory
-    #
-    #
-    #
-    #     # build_animation
-    #
-    #         # animation that shows the covariances of the EKF estimated path
-    #
-    #         # this animation that shows the covariances of the dead reckoning estimated path
-    #
-    #     # save_animation(ani, os.path.dirname(__file__), "ekf_predict")
-    #
-    #
-    # def get_odometry(self, sensor_data):
-    #     """
-    #     Args:
-    #         sensor_data: map from a tuple (frame number, type) where type is either ‘odometry’ or ‘sensor’.
-    #         Odometry data is given as a map containing values for ‘r1’, ‘t’ and ‘r2’ – the first angle, the translation and the second angle in the odometry model respectively.
-    #         Sensor data is given as a map containing:
-    #           - ‘id’ – a list of landmark ids (starting at 1, like in the landmarks structure)
-    #           - ‘range’ – list of ranges, in order corresponding to the ids
-    #           - ‘bearing’ – list of bearing angles in radians, in order corresponding to the ids
-    #
-    #     Returns:
-    #         numpy array of of dim [num of frames X 3]
-    #         first two components in each row are the x and y in meters
-    #         the third component is the heading in radians
-    #     """
-    #     num_frames = len(sensor_data) // 2
-    #     state = np.array([[0, 0, 0]], dtype=float).reshape(1, 3)
-    #     for i in range(num_frames):
-    #         curr_odometry = sensor_data[i, 'odometry']
-    #         t = np.array([
-    #             curr_odometry['t'] * np.cos(state[-1, 2] + curr_odometry['r1']),
-    #             curr_odometry['t'] * np.sin(state[-1, 2] + curr_odometry['r1']),
-    #             curr_odometry['r1'] + curr_odometry['r2']
-    #         ]).reshape(3, 1)
-    #         new_pos = state[-1, :].reshape(3, 1) + t
-    #         state = np.concatenate([state, new_pos.reshape(1, 3)], axis=0)
-    #     return state
-    #
-    #
+    def Q2(self):
+
+        """
+        That function runs the code of question 2 of the project.
+        Load data from the KITTI dataset, add noise to the ground truth GPS values, yaw rate, and velocities, and apply a Kalman filter to the noisy data.
+        """
+
+
+
+        # plot yaw, yaw rate and forward velocity
+        yaw_vec = self.yaw_vf_wz[:, 0]
+        fv_vec = self.yaw_vf_wz[:, 1]
+        yaw_rate_vec = self.yaw_vf_wz[:, 2]
+        graphs.plot_yaw_yaw_rate_fv(yaw_vec, yaw_rate_vec, fv_vec)
+
+        # sigma_samples =
+
+        # sigma_vf, sigma_omega =
+
+        # build_LLA_GPS_trajectory
+
+        # add_gaussian_noise to u and measurments (locations_gt[:,i], sigma_samples[i])
+
+         # plot vf and wz with and without noise
+
+        # ekf = ExtendedKalmanFilter(sigma_samples, sigma_vf, sigma_omega)
+        # locations_ekf, sigma_x_xy_yx_y_t = ekf.run(locations_noised, times, yaw_vf_wz_noised, do_only_predict=False)
+
+        # RMSE, maxE = ekf.calc_RMSE_maxE(locations_gt, locations_ekf)
+
+        # print the maxE and RMSE
+
+        # draw the trajectories
+
+        # draw the error
+
+        #v.	Plot the estimated error of x-y-θ values separately and corresponded sigma value along the trajectory
+
+
+
+        # build_animation
+
+            # animation that shows the covariances of the EKF estimated path
+
+            # this animation that shows the covariances of the dead reckoning estimated path
+
+        # save_animation(ani, os.path.dirname(__file__), "ekf_predict")
+
+
+    def get_odometry(self, sensor_data):
+        """
+        Args:
+            sensor_data: map from a tuple (frame number, type) where type is either ‘odometry’ or ‘sensor’.
+            Odometry data is given as a map containing values for ‘r1’, ‘t’ and ‘r2’ – the first angle, the translation and the second angle in the odometry model respectively.
+            Sensor data is given as a map containing:
+              - ‘id’ – a list of landmark ids (starting at 1, like in the landmarks structure)
+              - ‘range’ – list of ranges, in order corresponding to the ids
+              - ‘bearing’ – list of bearing angles in radians, in order corresponding to the ids
+
+        Returns:
+            numpy array of of dim [num of frames X 3]
+            first two components in each row are the x and y in meters
+            the third component is the heading in radians
+        """
+        num_frames = len(sensor_data) // 2
+        state = np.array([[0, 0, 0]], dtype=float).reshape(1, 3)
+        for i in range(num_frames):
+            curr_odometry = sensor_data[i, 'odometry']
+            t = np.array([
+                curr_odometry['t'] * np.cos(state[-1, 2] + curr_odometry['r1']),
+                curr_odometry['t'] * np.sin(state[-1, 2] + curr_odometry['r1']),
+                curr_odometry['r1'] + curr_odometry['r2']
+            ]).reshape(3, 1)
+            new_pos = state[-1, :].reshape(3, 1) + t
+            state = np.concatenate([state, new_pos.reshape(1, 3)], axis=0)
+        return state
+
+
     # def Q3(self):
     #
     #     """
@@ -265,8 +271,8 @@ class ProjectQuestions:
     #     # ani.save('im.mp4', metadata={'artist':'me'})
 
     def run(self):
-        self.Q1()
-        # self.Q2()
+        # self.Q1()
+        self.Q2()
         # self.Q3()
 
 
