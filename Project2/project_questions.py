@@ -95,19 +95,27 @@ class ProjectQuestions:
         enu_kf_dead_reckon, cov_mat_dead_reckon = kf_dead_reckon.run(variance_amp=3)
         graphs.plot_trajectory_comparison_dead_reckoning(self.enu[:, 0:2], enu_kf, enu_kf_dead_reckon)
 
-        # build_animation (hint- graphs.build_animation)
-        trajectory_animation = graphs.build_animation(enu_kf, enu_kf_dead_reckon, self.enu[:, 0:2], 5*cov_mat, title="Trajectory Animation", xlabel="East [meters]", ylabel="North [meters]",
+        # animation that shows the covariances of the EKF estimated path
+        trajectory_animation = graphs.build_animation(self.enu[:, 0:2], enu_kf_dead_reckon, enu_kf, cov_mat, title="Trajectory Animation", xlabel="East [meters]", ylabel="North [meters]",
                                                       label1="Predicted Trajectory", label2="Dead Reckoning", label0="GT Trajectory")
 
-            # animation that shows the covariances of the EKF estimated path
-
-            # this animation that shows the covariances of the dead reckoning estimated path
+        # this animation that shows the covariances of the dead reckoning estimated path
+        ani_dead_reckon_cov = graphs.build_animation(self.enu[:, 0:2], enu_kf, enu_kf_dead_reckon, cov_mat_dead_reckon, title="Trajectory Animation", xlabel="East [meters]", ylabel="North [meters]",
+                                                      label1="Predicted Trajectory", label2="Dead Reckoning", label0="GT Trajectory")
 
         # Plot the estimated error of x-y values separately and corresponded sigma value along the trajectory
+        err_x = self.enu[:, 0] - enu_kf[:, 0]
+        err_cov_x = (err_x, np.sqrt(cov_mat[:, 0]))
+        err_y = self.enu[:, 1] - enu_kf[:, 1]
+        err_cov_y = (err_y, np.sqrt(cov_mat[:, 3]))
+        graphs.plot_error(err_cov_x, err_cov_y)
 
         # Save animation
-        # save_path = "../results/Q1/"
-        # graphs.save_animation(trajectory_animation, save_path, "Kalman_Filter_Trajectory_Animation")
+        is_save_animation = False
+        if is_save_animation:
+            save_path = "../results/Q1/"
+            graphs.save_animation(trajectory_animation, save_path, "Kalman_Filter_Trajectory_Animation_zoomed2")
+            graphs.save_animation(ani_dead_reckon_cov, save_path, "dead_reckon_cov_animation")
 
 
 

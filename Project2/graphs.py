@@ -64,10 +64,25 @@ def plot_error(err_cov_x, err_cov_y, err_cov_yaw=None):
         err_cov_y: tuple of (numpy array with difference in position across the y axis, predicted sigma in y axis)
         err_cov_yaw: optional, tuple of (numpy array with normalized difference in heading, predicted sigma in heading)
     """
+
+    # fig, ax = plt.figure()
+    # err_x, cov_x = err_cov_x
+    # plt.plot(range(err_x.shape[0]), err_x, 'b')
+    # plt.plot(range(len(cov_x)), cov_x, 'r')
+    # plt.plot(range(len(cov_x)), [-a for a in cov_x], 'r')
+    # ax.set_title(
+    #     "Error throughout the path along the x axis",
+    #     fontsize=20)
+    # ax.set_xlabel("Frame #", fontsize=20)
+    # ax.set_ylabel("Error (x_gt - x_predicted) [meters]", fontsize=20)
+    # ax.legend(["Error (x_gt - x_predicted) [meters]", "Predicted variance"], prop={"size": 20}, loc="best")
+
     if err_cov_yaw:
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
     else:
         fig, (ax1, ax2) = plt.subplots(1, 2)
+
+
     err_x, cov_x = err_cov_x
     ax1.plot(range(err_x.shape[0]), err_x, 'b')
     ax1.plot(range(len(cov_x)), cov_x, 'r')
@@ -362,7 +377,8 @@ def build_animation(X_Y0, X_Y1, X_Y2, x_xy_xy_y, title, xlabel, ylabel, label0, 
             x_min = c - w
             x_max = c + w
         ax.set_xlim(x_min, x_max)
-        ax.set_ylim(y_min, y_max)
+        # ax.set_ylim(y_min, y_max)
+        ax.set_ylim(-10, 100)
         ax.set_title(title)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
@@ -400,9 +416,10 @@ def build_animation(X_Y0, X_Y1, X_Y2, x_xy_xy_y, title, xlabel, ylabel, label0, 
 
 def save_animation(ani, basedir, file_name):
     print("Saving animation")
-    Writer = animation.writers['ffmpeg']
-    writer = Writer(fps=50, metadata=dict(artist='Me'), bitrate=1800)
-    ani.save(os.path.join(basedir, f'{file_name}.mp4'), writer=writer)
+    # Writer = animation.writers['ffmpeg']
+    # writer = Writer(fps=50, metadata=dict(artist='Me'), bitrate=1800)
+    # ani.save(os.path.join(basedir, f'{file_name}.mp4'), writer=writer)
+    ani.save(os.path.join(basedir, f'{file_name}.gif'), writer='pillow', fps=50)
     print("Animation saved")
 
 
