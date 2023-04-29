@@ -43,6 +43,7 @@ class KalmanFilter:
         self.R = np.zeros([4, 4], dtype=float)
         self.R[2, 2] = delta_t * (sigma_n ** 2)
         self.R[3, 3] = delta_t * (sigma_n ** 2)
+
     @staticmethod
     def calc_RMSE_maxE(X_Y_GT, X_Y_est):
         """
@@ -57,12 +58,12 @@ class KalmanFilter:
         """
 
         converge_delay = 100
-        RMSE = np.sqrt(np.mean((X_Y_GT[converge_delay:] - X_Y_est[converge_delay:])**2))
+        RMSE = np.sqrt(np.mean((X_Y_GT[converge_delay:] - X_Y_est[converge_delay:]) ** 2))
         maxE = np.max(np.sum(np.abs(X_Y_GT[converge_delay:] - X_Y_est[converge_delay:]), axis=1))
 
         return RMSE, maxE
 
-    def kalman_filter_iter(self, prev_mu, prev_sigma, z):
+    def kalman_filter_iter(self, prev_mu, prev_sigma, z, currTime):
         """
         Args:
             prev_mu: previous mu
@@ -79,7 +80,10 @@ class KalmanFilter:
 
         # Kalman Gain
         inv_mat = np.linalg.inv(np.dot(self.C, np.dot(sigma_pred, self.C.T)) + self.Q)
-        K = np.dot(sigma_pred, np.dot(self.C.T, inv_mat))
+        if not (self.is_dead_reckoning) or currTime < 5.0:
+            K = np.dot(sigma_pred, np.dot(self.C.T, inv_mat))
+        else:
+            K = np.zeros([4, 2], dtype=float)
 
         # Correction
         z = z[0:2, :]
@@ -105,16 +109,15 @@ class KalmanFilter:
         for iFrame in range(num_frames):
             curr_enu = self.enu_noise[iFrame, 0:2].T[np.newaxis]
             z = np.vstack((curr_enu.T, np.zeros([2, 1], dtype=float)))
-            mu_t, sigma_t = self.kalman_filter_iter(prev_mu, prev_sigma, z)
+            mu_t, sigma_t = self.kalman_filter_iter(prev_mu, prev_sigma, z, self.times[iFrame])
             enu_kf[iFrame, :] = mu_t[0:2, 0]
-            cov_mat[iFrame, :] = np.diag(sigma_t)
+            cov_mat[iFrame, :] = sigma_t[0, 0], sigma_t[0, 1], sigma_t[1, 0], sigma_t[1, 1]
 
             # Update
             prev_mu = mu_t
             prev_sigma = sigma_t
 
         return enu_kf, cov_mat
-
 
 # class ExtendedKalmanFilter:
 #     """

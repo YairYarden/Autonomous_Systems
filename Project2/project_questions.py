@@ -78,15 +78,26 @@ class ProjectQuestions:
         # Plot ENU coordinates with noise
         graphs.plot_trajectory_with_noise(self.enu, self.enu_noise, title="ENU - GT & Noised", xlabel="x[m]", ylabel="y[m]", legend_gt="GT", legend_noise="Noised")
 
-        # KalmanFilter
-        sigma_n = 1
-        kf = KalmanFilter(self.enu_noise[:, 0:2], self.times, self.sigma_xy, sigma_n, self.delta_t)
+        # Kalman Filter regular
+        sigma_n = 0.8
+        kf = KalmanFilter(self.enu_noise[:, 0:2], self.times, self.sigma_xy, sigma_n, self.delta_t, is_dead_reckoning=False)
         enu_kf, cov_mat = kf.run(variance_amp=3)
 
         # calc_RMSE_maxE(locations_GT, locations_kf)
         RMSE, maxE = kf.calc_RMSE_maxE(self.enu[:, 0:2], enu_kf)
+        print('RMSE: ', RMSE, 'maxE: ', maxE)
+
+        # Plot ENU comparison between GT and KalmanFilter
+        graphs.plot_trajectory_comparison(self.enu[:, 0:2], enu_kf)
+
+        # Kalman Filter with dead reckoning
+        kf_dead_reckon = KalmanFilter(self.enu_noise[:, 0:2], self.times, self.sigma_xy, sigma_n, self.delta_t, is_dead_reckoning=True)
+        enu_kf_dead_reckon, cov_mat_dead_reckon = kf_dead_reckon.run(variance_amp=3)
+        graphs.plot_trajectory_comparison_dead_reckoning(self.enu[:, 0:2], enu_kf, enu_kf_dead_reckon)
 
         # build_animation (hint- graphs.build_animation)
+        trajectory_animation = graphs.build_animation(enu_kf, enu_kf_dead_reckon, self.enu[:, 0:2], 5*cov_mat, title="Trajectory Animation", xlabel="East [meters]", ylabel="North [meters]",
+                                                      label1="Predicted Trajectory", label2="Dead Reckoning", label0="GT Trajectory")
 
             # animation that shows the covariances of the EKF estimated path
 
@@ -94,7 +105,9 @@ class ProjectQuestions:
 
         # Plot the estimated error of x-y values separately and corresponded sigma value along the trajectory
 
-        # save_animation(ani, os.path.dirname(__file__), "ekf_predict")
+        # Save animation
+        # save_path = "../results/Q1/"
+        # graphs.save_animation(trajectory_animation, save_path, "Kalman_Filter_Trajectory_Animation")
 
 
 
