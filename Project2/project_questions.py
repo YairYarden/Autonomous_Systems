@@ -96,7 +96,7 @@ class ProjectQuestions:
         enu_kf_dead_reckon, cov_mat_dead_reckon = kf_dead_reckon.run(variance_amp=3)
         graphs.plot_trajectory_comparison_dead_reckoning(self.enu[:, 0:2], enu_kf, enu_kf_dead_reckon)
 
-        # animation that shows the covariances of the EKF estimated path
+        # animation that shows the covariances of the KF estimated path
         trajectory_animation = graphs.build_animation(self.enu[:, 0:2], enu_kf_dead_reckon, enu_kf, cov_mat, title="Trajectory Animation", xlabel="East [meters]", ylabel="North [meters]",
                                                       label1="Predicted Trajectory", label2="Dead Reckoning", label0="GT Trajectory")
 
@@ -127,17 +127,11 @@ class ProjectQuestions:
         Load data from the KITTI dataset, add noise to the ground truth GPS values, yaw rate, and velocities, and apply a Kalman filter to the noisy data.
         """
 
-
-
         # plot yaw, yaw rate and forward velocity
         yaw_vec = self.yaw_vf_wz[:, 0]
         vf_vec = self.yaw_vf_wz[:, 1]
         yaw_rate_vec = self.yaw_vf_wz[:, 2]
         graphs.plot_yaw_yaw_rate_fv(yaw_vec, yaw_rate_vec, vf_vec)
-
-        # build_LLA_GPS_trajectory
-
-        # add_gaussian_noise to u and measurments (locations_gt[:,i], sigma_samples[i])
 
         # plot vf and wz with and without noise
         graphs.plot_vf_wz_with_and_without_noise(self.yaw_vf_wz, self.yaw_vf_wz_noise)
@@ -152,21 +146,35 @@ class ProjectQuestions:
         # draw the trajectories
         graphs.plot_trajectory_comparison(self.enu[:, 0:2], enu_ekf)
 
-        stophere = 1
-        # draw the error
+        # dead reckoning
+        ekf_dead_reckon = ExtendedKalmanFilter(self.enu_noise, self.yaw_vf_wz_noise, self.times, self.sigma_xy, self.sigma_theta,
+                                               self.sigma_vf, self.sigma_wz, 3, True)
+        enu_ekf_dead_reckon, yaw_ekf_dead_reckon, cov_mat_dead_reckon = ekf_dead_reckon.run()
+        graphs.plot_trajectory_comparison_dead_reckoning(self.enu[:, 0:2], enu_ekf, enu_ekf_dead_reckon)
+
+        # EKF estimated path animation
+        trajectory_animation = graphs.build_animation(self.enu[:, 0:2], enu_ekf_dead_reckon, enu_ekf, cov_mat[:, 0:4], title="Trajectory Animation", xlabel="East [meters]",
+                                                      ylabel="North [meters]", label1="Predicted Trajectory", label2="Dead Reckoning", label0="GT Trajectory")
+
+        # EKF estimated path animation with reckon dead
+        ani_dead_reckon_cov = graphs.build_animation(self.enu[:, 0:2], enu_ekf, enu_ekf_dead_reckon, cov_mat_dead_reckon[:, 0:4], title="Trajectory Animation",
+                                                     xlabel="East [meters]", ylabel="North [meters]", label1="Predicted Trajectory", label2="Dead Reckoning", label0="GT Trajectory")
+
+        # Save animation
+        is_save_animation = False
+        if is_save_animation:
+            save_path = "../results/Q2/"
+            graphs.save_animation(trajectory_animation, save_path, "EKF_trajectory_animation")
+            graphs.save_animation(ani_dead_reckon_cov, save_path, "EKF_trajectory_animation_dead_reckon_cov")
 
         #v.	Plot the estimated error of x-y-θ values separately and corresponded sigma value along the trajectory
-
-
-
-        # build_animation
-
-            # animation that shows the covariances of the EKF estimated path
-
-            # this animation that shows the covariances of the dead reckoning estimated path
-
-        # save_animation(ani, os.path.dirname(__file__), "ekf_predict")
-
+        err_x = self.enu[:, 0] - enu_ekf[:, 0]
+        err_cov_x = (err_x, np.sqrt(cov_mat[:, 0]))
+        err_y = self.enu[:, 1] - enu_ekf[:, 1]
+        err_cov_y = (err_y, np.sqrt(cov_mat[:, 3]))
+        err_yaw = self.yaw_vf_wz[:, 0] - yaw_ekf
+        err_cov_yaw = (err_yaw, np.sqrt(cov_mat[:, 4]))
+        graphs.plot_error(err_cov_x, err_cov_y, err_cov_yaw)
 
     def get_odometry(self, sensor_data):
         """

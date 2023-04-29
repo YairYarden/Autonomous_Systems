@@ -254,7 +254,7 @@ class ExtendedKalmanFilter:
             z = self.enu_noise[iFrame, 0:2].T[np.newaxis]
             mu_t, sigma_t = self.extended_kalman_filter_iter(prev_mu, prev_sigma, yaw_vec[iFrame], vf_vec[iFrame], wz_vec[iFrame], z.T, self.delta_t, self.times[iFrame])
             enu_ekf[iFrame, :] = mu_t[0:2, 0]
-            cov_mat[iFrame, :] = sigma_t[0, 0], sigma_t[0, 1], sigma_t[1, 0], sigma_t[1, 1], sigma_t[2,2]
+            cov_mat[iFrame, :] = sigma_t[0, 0], sigma_t[0, 1], sigma_t[1, 0], sigma_t[1, 1], sigma_t[2, 2]
             yaw_ekf[iFrame] = mu_t[2, 0]
 
             # Update

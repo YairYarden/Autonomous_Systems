@@ -65,18 +65,6 @@ def plot_error(err_cov_x, err_cov_y, err_cov_yaw=None):
         err_cov_yaw: optional, tuple of (numpy array with normalized difference in heading, predicted sigma in heading)
     """
 
-    # fig, ax = plt.figure()
-    # err_x, cov_x = err_cov_x
-    # plt.plot(range(err_x.shape[0]), err_x, 'b')
-    # plt.plot(range(len(cov_x)), cov_x, 'r')
-    # plt.plot(range(len(cov_x)), [-a for a in cov_x], 'r')
-    # ax.set_title(
-    #     "Error throughout the path along the x axis",
-    #     fontsize=20)
-    # ax.set_xlabel("Frame #", fontsize=20)
-    # ax.set_ylabel("Error (x_gt - x_predicted) [meters]", fontsize=20)
-    # ax.legend(["Error (x_gt - x_predicted) [meters]", "Predicted variance"], prop={"size": 20}, loc="best")
-
     if err_cov_yaw:
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
     else:
@@ -88,22 +76,22 @@ def plot_error(err_cov_x, err_cov_y, err_cov_yaw=None):
     ax1.plot(range(len(cov_x)), cov_x, 'r')
     ax1.plot(range(len(cov_x)), [-a for a in cov_x], 'r')
     ax1.set_title(
-        "Error throughout the path along the x axis",
-        fontsize=20)
-    ax1.set_xlabel("Frame #", fontsize=20)
-    ax1.set_ylabel("Error (x_gt - x_predicted) [meters]", fontsize=20)
-    ax1.legend(["Error (x_gt - x_predicted) [meters]", "Predicted variance"], prop={"size": 20}, loc="best")
+        "Error path along the x axis",
+        fontsize=15)
+    ax1.set_xlabel("Frame #", fontsize=15)
+    ax1.set_ylabel("Error (x_gt - x_predicted) [m]", fontsize=15)
+    ax1.legend(["Error (x_gt - x_predicted) [m]", "Predicted variance"], prop={"size": 15}, loc="best")
 
     err_y, cov_y = err_cov_y
     ax2.plot(range(err_y.shape[0]), err_y, 'b')
     ax2.plot(range(len(cov_y)), cov_y, 'r')
     ax2.plot(range(len(cov_y)), [-a for a in cov_y], 'r')
     ax2.set_title(
-        "Error throughout the path along the y axis",
-        fontsize=20)
-    ax2.set_xlabel("Frame #", fontsize=20)
-    ax2.set_ylabel("Error (y_gt - y_predicted) [meters]", fontsize=20)
-    ax2.legend(["Error (y_gt - x_predicted) [meters]", "Predicted variance"], prop={"size": 20}, loc="best")
+        "Error path along the y axis",
+        fontsize=15)
+    ax2.set_xlabel("Frame #", fontsize=15)
+    ax2.set_ylabel("Error (y_gt - y_predicted) [m]", fontsize=15)
+    ax2.legend(["Error (y_gt - x_predicted) [m]", "Predicted variance"], prop={"size": 15}, loc="best")
 
     if err_cov_yaw:
         err_yaw, cov_yaw = err_cov_yaw
@@ -111,11 +99,11 @@ def plot_error(err_cov_x, err_cov_y, err_cov_yaw=None):
         ax3.plot(range(len(cov_yaw)), cov_yaw, 'r')
         ax3.plot(range(len(cov_yaw)), [-a for a in cov_yaw], 'r')
         ax3.set_title(
-            "Error throughout the path in yaw",
-            fontsize=20)
-        ax3.set_xlabel("Frame #", fontsize=20)
-        ax3.set_ylabel("Error (yaw_gt - yaw_predicted) [rad]", fontsize=20)
-        ax3.legend(["Error (yaw_gt - x_predicted) [meters]", "Predicted variance"], prop={"size": 20}, loc="best")
+            "Error path in yaw",
+            fontsize=15)
+        ax3.set_xlabel("Frame #", fontsize=15)
+        ax3.set_ylabel("Error (yaw_gt - yaw_predicted) [rad]", fontsize=15)
+        ax3.legend(["Error (yaw_gt - x_predicted) [m]", "Predicted variance"], prop={"size": 15}, loc="best")
 
 
 def plot_trajectory_comparison_with_and_without_noise(enu, enu_noise, enu_predicted=None):
