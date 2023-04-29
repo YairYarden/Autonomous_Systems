@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import matplotlib.pyplot as plt
 from utils.plot_state import plot_state
@@ -63,12 +65,13 @@ class KalmanFilter:
 
         return RMSE, maxE
 
-    def kalman_filter_iter(self, prev_mu, prev_sigma, z, currTime):
+    def kalman_filter_iter(self, prev_mu, prev_sigma, z, curr_time):
         """
         Args:
             prev_mu: previous mu
             prev_sigma: previous sigma
             z: measurement
+            curr_time: current time
 
         Returns:
             mu, Sigma
@@ -80,7 +83,7 @@ class KalmanFilter:
 
         # Kalman Gain
         inv_mat = np.linalg.inv(np.dot(self.C, np.dot(sigma_pred, self.C.T)) + self.Q)
-        if not (self.is_dead_reckoning) or currTime < 5.0:
+        if not (self.is_dead_reckoning) or curr_time < 5.0:
             K = np.dot(sigma_pred, np.dot(self.C.T, inv_mat))
         else:
             K = np.zeros([4, 2], dtype=float)
@@ -119,51 +122,148 @@ class KalmanFilter:
 
         return enu_kf, cov_mat
 
-# class ExtendedKalmanFilter:
-#     """
-#     class for the implementation of the extended Kalman filter
-#     """
-#     def __init__(self, enu_noise, yaw_vf_wz, times, sigma_xy, sigma_theta, sigma_vf, sigma_wz, k, is_dead_reckoning, dead_reckoning_start_sec=5.0):
-#         """
-#         Args:
-#             enu_noise: enu data with noise
-#             times: elapsed time in seconds from the first timestamp in the sequence
-#             sigma_xy: sigma in the x and y axis as provided in the question
-#             sigma_n: hyperparameter used to fine tune the filter
-#             yaw_vf_wz: the yaw, forward velocity and angular change rate to be used (either non noisy or noisy, depending on the question)
-#             sigma_theta: sigma of the heading
-#             sigma_vf: sigma of the forward velocity
-#             sigma_wz: sigma of the angular change rate
-#             k: hyper parameter to fine tune the filter
-#             is_dead_reckoning: should dead reckoning be applied after 5.0 seconds when applying the filter
-#             dead_reckoning_start_sec: from what second do we start applying dead reckoning, used for experimentation only
-#         """
-#         self.enu_noise = enu_noise
-#         self.yaw_vf_wz = yaw_vf_wz
-#         self.times = times
-#         self.sigma_xy = sigma_xy
-#         self.sigma_theta = sigma_theta
-#         self.sigma_vf = sigma_vf
-#         self.sigma_wz = sigma_wz
-#         self.k = k
-#         self.is_dead_reckoning = is_dead_reckoning
-#         self.dead_reckoning_start_sec = dead_reckoning_start_sec
-#
-#
-#     #TODO
-#     @staticmethod
-#     def calc_RMSE_maxE(X_Y_GT, X_Y_est):
-#         #TODO
-#         return RMSE, maxE
-#
-#
-#     def run(self):
-#     """
-#     Runs the extended Kalman filter
-#     outputs: enu_ekf, covs
-#     """
-#
-#
+class ExtendedKalmanFilter:
+    """
+    class for the implementation of the extended Kalman filter
+    """
+    def __init__(self, enu_noise, yaw_vf_wz, times, sigma_xy, sigma_theta, sigma_vf, sigma_wz, k, is_dead_reckoning, dead_reckoning_start_sec=5.0):
+        """
+        Args:
+            enu_noise: enu data with noise
+            times: elapsed time in seconds from the first timestamp in the sequence
+            sigma_xy: sigma in the x and y axis as provided in the question
+            sigma_n: hyperparameter used to fine tune the filter
+            yaw_vf_wz: the yaw, forward velocity and angular change rate to be used (either non noisy or noisy, depending on the question)
+            sigma_theta: sigma of the heading
+            sigma_vf: sigma of the forward velocity
+            sigma_wz: sigma of the angular change rate
+            k: hyper parameter to fine tune the filter
+            is_dead_reckoning: should dead reckoning be applied after 5.0 seconds when applying the filter
+            dead_reckoning_start_sec: from what second do we start applying dead reckoning, used for experimentation only
+        """
+        self.enu_noise = enu_noise
+        self.yaw_vf_wz = yaw_vf_wz
+        self.times = times
+        self.sigma_xy = sigma_xy
+        self.sigma_theta = sigma_theta
+        self.sigma_vf = sigma_vf
+        self.sigma_wz = sigma_wz
+        self.k = k
+        self.is_dead_reckoning = is_dead_reckoning
+        self.dead_reckoning_start_sec = dead_reckoning_start_sec
+        self.delta_t = times[1] - times[0]
+
+        # Matrices notation as in the lecture
+        # Jacobian Matrix G
+
+        # Jacobian Matrix H
+        self.H = np.array([[1, 0, 0], [0, 1, 0]])
+
+        # Covariance Matrix Q
+        self.Q = np.diag(np.array([sigma_xy ** 2, sigma_xy ** 2]))
+
+        # Covariance Matrix R
+        self.R = np.zeros([3, 3], dtype=float)
+        self.R_hat = np.diag(np.array([sigma_vf ** 2, sigma_wz ** 2]))
+
+        # Init Sigma
+        self.sigma_0 = np.diag(np.array([k*(sigma_xy**2), k*(sigma_xy**2), sigma_theta]))
+
+    @staticmethod
+    def g_func(vf, wz, prev_mu, delta_t):
+        result = prev_mu
+        yaw = prev_mu[2]
+        result[0] += (-(vf/wz)*math.sin(yaw) + (vf/wz)*math.sin(yaw + wz*delta_t))
+        result[1] += ((vf/wz)*math.cos(yaw) - (vf/wz)*math.cos(yaw + wz*delta_t))
+        result[2] += wz*delta_t
+        return result
+
+    @staticmethod
+    def calc_RMSE_maxE(X_Y_GT, X_Y_est):
+        """
+        That function calculates RMSE and maxE
+
+        Args:
+            X_Y_GT (np.ndarray): ground truth values of x and y
+            X_Y_est (np.ndarray): estimated values of x and y
+
+        Returns:
+            (float, float): RMSE, maxE
+        """
+
+        converge_delay = 100
+        RMSE = np.sqrt(np.mean((X_Y_GT[converge_delay:] - X_Y_est[converge_delay:]) ** 2))
+        maxE = np.max(np.sum(np.abs(X_Y_GT[converge_delay:] - X_Y_est[converge_delay:]), axis=1))
+
+        return RMSE, maxE
+
+    def extended_kalman_filter_iter(self, prev_mu, prev_sigma, yaw, vf, wz, z, delta_t, curr_time):
+
+        V = np.array([[-(1 / wz) * math.sin(yaw) + (1 / wz) * math.sin(yaw + wz * delta_t),
+                      (vf / (wz ** 2)) * math.sin(yaw) - (vf / (wz ** 2)) * math.sin(yaw + wz * delta_t) + (vf / wz) * math.cos(yaw + wz * delta_t) * delta_t],
+                      [(1 / wz) * math.cos(yaw) - (1 / wz) * math.cos(yaw + wz * delta_t),
+                       -(vf / (wz ** 2)) * math.cos(yaw) + (vf / (wz ** 2)) * math.cos(yaw + wz * delta_t) + (vf / wz) * math.sin(yaw + wz * delta_t) * delta_t],
+                      [0, delta_t]])
+
+        G = np.array([[1, 0, -(vf / wz) * math.cos(yaw) + (vf / wz) * math.cos(yaw + wz * delta_t)],
+                      [0, 1, -(vf / wz) * math.sin(yaw) + (vf / wz) * math.sin(yaw + wz * delta_t)],
+                      [0, 0, 1]])
+
+        R = np.dot(V, np.dot(self.R_hat, V.T))
+
+        # Predicition step
+        mu_pred = self.g_func(vf, wz, prev_mu, delta_t)
+        sigma_pred = np.dot(G, np.dot(prev_sigma, G.T)) + R
+
+        # Kalman Gain
+        inv_mat = np.linalg.inv(np.dot(self.H, np.dot(sigma_pred, self.H.T)) + self.Q)
+        if not (self.is_dead_reckoning) or curr_time < 5.0:
+            K = np.dot(sigma_pred, np.dot(self.H.T, inv_mat))
+        else:
+            K = np.zeros([3, 2], dtype=float)
+
+        # Correction step
+        mu = mu_pred + np.dot(K, (z - np.dot(self.H, mu_pred)))
+        sigma = np.dot((np.eye(3, dtype=float) - np.dot(K, self.H)), sigma_pred)
+
+        return mu, sigma
+
+    def run(self):
+        """
+        Runs the extended Kalman filter
+        outputs: enu_ekf, yaw_ekf, cov_mat
+        """
+
+        # Collect results
+        enu_ekf = np.zeros(self.enu_noise[:, 0:2].shape)  # x,y
+        yaw_ekf = np.zeros(self.enu_noise[:, 0].shape)
+        cov_mat = np.zeros([enu_ekf.shape[0], 5])
+
+        # Extract yaw, vf, wz
+        yaw_vec = self.yaw_vf_wz[:, 0]
+        vf_vec = self.yaw_vf_wz[:, 1]
+        wz_vec = self.yaw_vf_wz[:, 2]
+
+        # Init mu and sigma
+        prev_mu = np.zeros([3, 1], dtype=float)
+        prev_mu[2] = yaw_vec[0]
+        prev_sigma = self.sigma_0
+
+        num_frames = enu_ekf.shape[0]
+        for iFrame in range(num_frames):
+            z = self.enu_noise[iFrame, 0:2].T[np.newaxis]
+            mu_t, sigma_t = self.extended_kalman_filter_iter(prev_mu, prev_sigma, yaw_vec[iFrame], vf_vec[iFrame], wz_vec[iFrame], z.T, self.delta_t, self.times[iFrame])
+            enu_ekf[iFrame, :] = mu_t[0:2, 0]
+            cov_mat[iFrame, :] = sigma_t[0, 0], sigma_t[0, 1], sigma_t[1, 0], sigma_t[1, 1], sigma_t[2,2]
+            yaw_ekf[iFrame] = mu_t[2, 0]
+
+            # Update
+            prev_mu = mu_t
+            prev_sigma = sigma_t
+
+        return enu_ekf, yaw_ekf, cov_mat
+
+
 # class ExtendedKalmanFilterSLAM:
 #
 #

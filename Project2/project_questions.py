@@ -11,7 +11,7 @@ import random
 # import matplotlib.pyplot as plt
 # from matplotlib import animation
 # import graphs
-from kalman_filter import KalmanFilter #, ExtendedKalmanFilter, ExtendedKalmanFilterSLAM
+from kalman_filter import KalmanFilter, ExtendedKalmanFilter #, ExtendedKalmanFilterSLAM
 
 
 random.seed(123)
@@ -51,9 +51,10 @@ class ProjectQuestions:
         self.delta_t = self.times[1] - self.times[0]
 
         # add noise to the trajectory
-        self.sigma_xy = 3 #TODO
-        self.sigma_vf = 2 #TODO
-        self.sigma_wz = 0.2 #TODO
+        self.sigma_xy = 3
+        self.sigma_vf = 2 # 2
+        self.sigma_wz = 0.2 # 0.2
+        self.sigma_theta = 2
 
         num_examples = self.enu.shape[0]
 
@@ -130,29 +131,28 @@ class ProjectQuestions:
 
         # plot yaw, yaw rate and forward velocity
         yaw_vec = self.yaw_vf_wz[:, 0]
-        fv_vec = self.yaw_vf_wz[:, 1]
+        vf_vec = self.yaw_vf_wz[:, 1]
         yaw_rate_vec = self.yaw_vf_wz[:, 2]
-        graphs.plot_yaw_yaw_rate_fv(yaw_vec, yaw_rate_vec, fv_vec)
-
-        # sigma_samples =
-
-        # sigma_vf, sigma_omega =
+        graphs.plot_yaw_yaw_rate_fv(yaw_vec, yaw_rate_vec, vf_vec)
 
         # build_LLA_GPS_trajectory
 
         # add_gaussian_noise to u and measurments (locations_gt[:,i], sigma_samples[i])
 
-         # plot vf and wz with and without noise
+        # plot vf and wz with and without noise
+        graphs.plot_vf_wz_with_and_without_noise(self.yaw_vf_wz, self.yaw_vf_wz_noise)
 
-        # ekf = ExtendedKalmanFilter(sigma_samples, sigma_vf, sigma_omega)
-        # locations_ekf, sigma_x_xy_yx_y_t = ekf.run(locations_noised, times, yaw_vf_wz_noised, do_only_predict=False)
+        ekf = ExtendedKalmanFilter(self.enu_noise, self.yaw_vf_wz_noise, self.times, self.sigma_xy, self.sigma_theta, self.sigma_vf, self.sigma_wz, 3, False)
+        enu_ekf, yaw_ekf, cov_mat = ekf.run()
 
-        # RMSE, maxE = ekf.calc_RMSE_maxE(locations_gt, locations_ekf)
-
-        # print the maxE and RMSE
+        # RMSE, maxE
+        RMSE, maxE = ekf.calc_RMSE_maxE(self.enu[:, 0:2], enu_ekf)
+        print('RMSE: ', RMSE, 'maxE: ', maxE)
 
         # draw the trajectories
+        graphs.plot_trajectory_comparison(self.enu[:, 0:2], enu_ekf)
 
+        stophere = 1
         # draw the error
 
         #v.	Plot the estimated error of x-y-θ values separately and corresponded sigma value along the trajectory
