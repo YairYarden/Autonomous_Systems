@@ -12,7 +12,7 @@ import random
 # from matplotlib import animation
 # import graphs
 from kalman_filter import KalmanFilter, ExtendedKalmanFilter #, ExtendedKalmanFilterSLAM
-
+from kalman_filter import KalmanFilterConstAcc
 
 random.seed(123)
 np.random.seed(123)
@@ -54,7 +54,7 @@ class ProjectQuestions:
         self.sigma_xy = 3
         self.sigma_vf = 2 # 2
         self.sigma_wz = 0.2 # 0.2
-        self.sigma_theta = 2
+        self.sigma_theta = 1
 
         num_examples = self.enu.shape[0]
 
@@ -79,10 +79,17 @@ class ProjectQuestions:
         # Plot ENU coordinates with noise
         graphs.plot_trajectory_with_noise(self.enu, self.enu_noise, title="ENU - GT & Noised", xlabel="x[m]", ylabel="y[m]", legend_gt="GT", legend_noise="Noised")
 
-        # Kalman Filter regular
-        sigma_n = 0.8
-        kf = KalmanFilter(self.enu_noise[:, 0:2], self.times, self.sigma_xy, sigma_n, self.delta_t, is_dead_reckoning=False)
-        enu_kf, cov_mat = kf.run(variance_amp=3)
+        is_const_acc = True
+        if(is_const_acc):
+            # Kalman filter Const Acc
+            sigma_n = 0.65
+            kf = KalmanFilterConstAcc(self.enu_noise[:, 0:2], self.times, self.sigma_xy, sigma_n, self.delta_t, is_dead_reckoning=False)
+            enu_kf, cov_mat = kf.run(variance_amp=3)
+        else:
+            # Kalman Filter regular
+            sigma_n = 0.8
+            kf = KalmanFilter(self.enu_noise[:, 0:2], self.times, self.sigma_xy, sigma_n, self.delta_t, is_dead_reckoning=False)
+            enu_kf, cov_mat = kf.run(variance_amp=3)
 
         # calc_RMSE_maxE(locations_GT, locations_kf)
         RMSE, maxE = kf.calc_RMSE_maxE(self.enu[:, 0:2], enu_kf)
@@ -110,6 +117,11 @@ class ProjectQuestions:
         err_y = self.enu[:, 1] - enu_kf[:, 1]
         err_cov_y = (err_y, np.sqrt(cov_mat[:, 3]))
         graphs.plot_error(err_cov_x, err_cov_y)
+
+        # Compute containment percent
+        containment_percent_x, containment_percent_y = kf.compute_containment_percent(err_cov_x, err_cov_y)
+        print('Containment percent X : ', containment_percent_x)
+        print('Containment percent Y : ', containment_percent_y)
 
         # Save animation
         is_save_animation = False
@@ -143,6 +155,11 @@ class ProjectQuestions:
         RMSE, maxE = ekf.calc_RMSE_maxE(self.enu[:, 0:2], enu_ekf)
         print('RMSE: ', RMSE, 'maxE: ', maxE)
 
+        # Compare to KF
+        kf = KalmanFilter(self.enu_noise[:, 0:2], self.times, self.sigma_xy, 0.8, self.delta_t, is_dead_reckoning=False)
+        enu_kf, _ = kf.run(variance_amp=3)
+        graphs.plot_three_graphs(self.enu[:, 0:2], enu_ekf, enu_kf, 'Trajectory Comparison KF vs EKF', 'East[meters]', 'North[meters]','GT Trajectory', 'EKF Trajectory', 'KF Trajectory')
+
         # draw the trajectories
         graphs.plot_trajectory_comparison(self.enu[:, 0:2], enu_ekf)
 
@@ -152,9 +169,23 @@ class ProjectQuestions:
         enu_ekf_dead_reckon, yaw_ekf_dead_reckon, cov_mat_dead_reckon = ekf_dead_reckon.run()
         graphs.plot_trajectory_comparison_dead_reckoning(self.enu[:, 0:2], enu_ekf, enu_ekf_dead_reckon)
 
+        #v.	Plot the estimated error of x-y-θ values separately and corresponded sigma value along the trajectory
+        err_x = self.enu[:, 0] - enu_ekf[:, 0]
+        err_cov_x = (err_x, np.sqrt(cov_mat[:, 0]))
+        err_y = self.enu[:, 1] - enu_ekf[:, 1]
+        err_cov_y = (err_y, np.sqrt(cov_mat[:, 1]))
+        err_yaw = self.yaw_vf_wz[:, 0] - yaw_ekf
+        err_cov_yaw = (err_yaw, np.sqrt(cov_mat[:, 2]))
+        graphs.plot_error(err_cov_x, err_cov_y, err_cov_yaw)
+
+        # Compute containment percent
+        containment_percent_x, containment_percent_y = ekf.compute_containment_percent(err_cov_x, err_cov_y)
+        print('Containment percent X : ', containment_percent_x)
+        print('Containment percent Y : ', containment_percent_y)
+
         # EKF estimated path animation
         trajectory_animation = graphs.build_animation(self.enu[:, 0:2], enu_ekf_dead_reckon, enu_ekf, cov_mat[:, 0:4], title="Trajectory Animation", xlabel="East [meters]",
-                                                      ylabel="North [meters]", label1="Predicted Trajectory", label2="Dead Reckoning", label0="GT Trajectory")
+                                                      ylabel="North [meters]", label1="Dead Reckoning", label2="Predicted Trajectory", label0="GT Trajectory")
 
         # EKF estimated path animation with reckon dead
         ani_dead_reckon_cov = graphs.build_animation(self.enu[:, 0:2], enu_ekf, enu_ekf_dead_reckon, cov_mat_dead_reckon[:, 0:4], title="Trajectory Animation",
@@ -166,15 +197,6 @@ class ProjectQuestions:
             save_path = "../results/Q2/"
             graphs.save_animation(trajectory_animation, save_path, "EKF_trajectory_animation")
             graphs.save_animation(ani_dead_reckon_cov, save_path, "EKF_trajectory_animation_dead_reckon_cov")
-
-        #v.	Plot the estimated error of x-y-θ values separately and corresponded sigma value along the trajectory
-        err_x = self.enu[:, 0] - enu_ekf[:, 0]
-        err_cov_x = (err_x, np.sqrt(cov_mat[:, 0]))
-        err_y = self.enu[:, 1] - enu_ekf[:, 1]
-        err_cov_y = (err_y, np.sqrt(cov_mat[:, 3]))
-        err_yaw = self.yaw_vf_wz[:, 0] - yaw_ekf
-        err_cov_yaw = (err_yaw, np.sqrt(cov_mat[:, 4]))
-        graphs.plot_error(err_cov_x, err_cov_y, err_cov_yaw)
 
     def get_odometry(self, sensor_data):
         """
@@ -205,78 +227,80 @@ class ProjectQuestions:
         return state
 
 
-    # def Q3(self):
-    #
-    #     """
-    #     Runs the code for question 3 of the project
-    #     Loads the odometry (robot motion) and sensor (landmarks) data supplied with the exercise
-    #     Adds noise to the odometry data r1, trans and r2
-    #     Uses the extended Kalman filter SLAM algorithm with the noisy odometry data to predict the path of the robot and
-    #     the landmarks positions
-    #     """
-    #
-    #     #Pre-processing
-    #     landmarks = self.dataset.load_landmarks()
-    #     sensor_data_gt = self.dataset.load_sensor_data()
-    #     state = self.get_odometry(sensor_data_gt)
-    #     sigma_x_y_theta = #TODO
-    #     variance_r1_t_r2 = #TODO
-    #     variance_r_phi = #TODO
-    #
-    #     sensor_data_noised = add_gaussian_noise_dict(sensor_data_gt, list(np.sqrt(np.array(variance_r1_t_r2))))
-    #     # plot trajectory
-    #       #TODO
-    #     # plot trajectory + noise
-    #       #TODO
-    #
-    #     import matplotlib.pyplot as plt
-    #     fig = plt.figure()
-    #     ax = fig.add_subplot(111)
-    #
-    #     # KalmanFilter
-    #
-    #     ekf_slam = ExtendedKalmanFilterSLAM(sigma_x_y_theta, variance_r1_t_r2, variance_r_phi)
-    #
-    #     frames, mu_arr, mu_arr_gt, sigma_x_y_t_px1_py1_px2_py2 = ekf_slam.run(sensor_data_gt, sensor_data_noised, landmarks, ax)
-    #
-    #     #RMSE, maxE =calc_RMSE_maxE
-    #
-    #
-    #     # draw the error for x, y and theta
-    #
-    #     # Plot the estimated error ofof x-y-θ -#landmark values separately and corresponded sigma value along the trajectory
-    #
-    #     # draw the error
-    #
-    #
-    #     graphs.plot_single_graph(mu_arr_gt[:,0] - mu_arr[:,0], "x-$x_n$", "frame", "error", "x-$x_n$",
-    #                              is_scatter=True, sigma=np.sqrt(sigma_x_y_t_px1_py1_px2_py2[:,0]))
-    #     graphs.plot_single_graph(mu_arr_gt[:,1] - mu_arr[:,1], "y-$y_n$", "frame", "error", "y-$y_n$",
-    #                              is_scatter=True, sigma=np.sqrt(sigma_x_y_t_px1_py1_px2_py2[:,1]))
-    #     graphs.plot_single_graph(normalize_angles_array(mu_arr_gt[:,2] - mu_arr[:,2]), "$\\theta-\\theta_n$",
-    #                              "frame", "error", "$\\theta-\\theta_n$",
-    #                              is_scatter=True, sigma=np.sqrt(sigma_x_y_t_px1_py1_px2_py2[:,2]))
-    #
-    #     graphs.plot_single_graph((np.tile(landmarks[1][0], mu_arr.shape[0]) - mu_arr[:,3]),
-    #                              "landmark 1: x-$x_n$", "frame", "error [m]", "x-$x_n$",
-    #                              is_scatter=True, sigma=np.sqrt(sigma_x_y_t_px1_py1_px2_py2[:,3]))
-    #     graphs.plot_single_graph((np.tile(landmarks[1][1], mu_arr.shape[0]) - mu_arr[:,4]),
-    #                              "landmark 1: y-$y_n$", "frame", "error [m]", "y-$y_n$",
-    #                              is_scatter=True, sigma=np.sqrt(sigma_x_y_t_px1_py1_px2_py2[:,4]))
-    #
-    #     graphs.plot_single_graph((np.tile(landmarks[2][0], mu_arr.shape[0]) - mu_arr[:,5]),
-    #                              "landmark 2: x-$x_n$", "frame", "error [m]", "x-$x_n$",
-    #                              is_scatter=True, sigma=np.sqrt(sigma_x_y_t_px1_py1_px2_py2[:,5]))
-    #     graphs.plot_single_graph((np.tile(landmarks[2][1], mu_arr.shape[0]) - mu_arr[:,6]),
-    #                              "landmark 2: y-$y_n$", "frame", "error [m]", "y-$y_n$",
-    #                              is_scatter=True, sigma=np.sqrt(sigma_x_y_t_px1_py1_px2_py2[:,6]))
-    #
-    #     ax.set_xlim([-2, 12])
-    #     ax.set_ylim([-2, 12])
-    #
-    #     ani = animation.ArtistAnimation(fig, frames, repeat=False)
-    #     graphs.show_graphs()
-    #     # ani.save('im.mp4', metadata={'artist':'me'})
+    def Q3(self):
+
+        """
+        Runs the code for question 3 of the project
+        Loads the odometry (robot motion) and sensor (landmarks) data supplied with the exercise
+        Adds noise to the odometry data r1, trans and r2
+        Uses the extended Kalman filter SLAM algorithm with the noisy odometry data to predict the path of the robot and
+        the landmarks positions
+        """
+
+        #Pre-processing
+        landmarks = self.dataset.load_landmarks()
+        sensor_data_gt = self.dataset.load_sensor_data()
+        state = self.get_odometry(sensor_data_gt)
+
+        variance_r1_t_r2 = [0.01**2, 0.1**2, 0.01**2]
+        variance_r_phi = [0.1**2, 0.001**2]
+        sigma_x_y_theta = np.array([variance_r1_t_r2[1], variance_r1_t_r2[1], variance_r1_t_r2[0]+variance_r1_t_r2[2]])
+
+        # Add noise
+        sensor_data_noised = add_gaussian_noise_dict(sensor_data_gt, list(np.sqrt(np.array(variance_r1_t_r2))))
+        state_noised = self.get_odometry(sensor_data_noised)
+
+        # plot trajectory + noise
+        graphs.plot_trajectory_with_noise(state, state_noised, 'Noised Trajectory', 'x', 'y', 'Trajectory GT', 'Noised Trajectory')
+
+        import matplotlib.pyplot as plt
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+
+        # KalmanFilter
+
+        ekf_slam = ExtendedKalmanFilterSLAM(sigma_x_y_theta, variance_r1_t_r2, variance_r_phi)
+
+        frames, mu_arr, mu_arr_gt, sigma_x_y_t_px1_py1_px2_py2 = ekf_slam.run(sensor_data_gt, sensor_data_noised, landmarks, ax)
+
+        #RMSE, maxE =calc_RMSE_maxE
+
+
+        # draw the error for x, y and theta
+
+        # Plot the estimated error ofof x-y-θ -#landmark values separately and corresponded sigma value along the trajectory
+
+        # draw the error
+
+
+        graphs.plot_single_graph(mu_arr_gt[:,0] - mu_arr[:,0], "x-$x_n$", "frame", "error", "x-$x_n$",
+                                 is_scatter=True, sigma=np.sqrt(sigma_x_y_t_px1_py1_px2_py2[:,0]))
+        graphs.plot_single_graph(mu_arr_gt[:,1] - mu_arr[:,1], "y-$y_n$", "frame", "error", "y-$y_n$",
+                                 is_scatter=True, sigma=np.sqrt(sigma_x_y_t_px1_py1_px2_py2[:,1]))
+        graphs.plot_single_graph(normalize_angles_array(mu_arr_gt[:,2] - mu_arr[:,2]), "$\\theta-\\theta_n$",
+                                 "frame", "error", "$\\theta-\\theta_n$",
+                                 is_scatter=True, sigma=np.sqrt(sigma_x_y_t_px1_py1_px2_py2[:,2]))
+
+        graphs.plot_single_graph((np.tile(landmarks[1][0], mu_arr.shape[0]) - mu_arr[:,3]),
+                                 "landmark 1: x-$x_n$", "frame", "error [m]", "x-$x_n$",
+                                 is_scatter=True, sigma=np.sqrt(sigma_x_y_t_px1_py1_px2_py2[:,3]))
+        graphs.plot_single_graph((np.tile(landmarks[1][1], mu_arr.shape[0]) - mu_arr[:,4]),
+                                 "landmark 1: y-$y_n$", "frame", "error [m]", "y-$y_n$",
+                                 is_scatter=True, sigma=np.sqrt(sigma_x_y_t_px1_py1_px2_py2[:,4]))
+
+        graphs.plot_single_graph((np.tile(landmarks[2][0], mu_arr.shape[0]) - mu_arr[:,5]),
+                                 "landmark 2: x-$x_n$", "frame", "error [m]", "x-$x_n$",
+                                 is_scatter=True, sigma=np.sqrt(sigma_x_y_t_px1_py1_px2_py2[:,5]))
+        graphs.plot_single_graph((np.tile(landmarks[2][1], mu_arr.shape[0]) - mu_arr[:,6]),
+                                 "landmark 2: y-$y_n$", "frame", "error [m]", "y-$y_n$",
+                                 is_scatter=True, sigma=np.sqrt(sigma_x_y_t_px1_py1_px2_py2[:,6]))
+
+        ax.set_xlim([-2, 12])
+        ax.set_ylim([-2, 12])
+
+        ani = animation.ArtistAnimation(fig, frames, repeat=False)
+        graphs.show_graphs()
+        # ani.save('im.mp4', metadata={'artist':'me'})
 
     def run(self):
         # self.Q1()

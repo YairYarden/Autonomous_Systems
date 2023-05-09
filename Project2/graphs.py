@@ -55,6 +55,7 @@ def plot_vf_wz_with_and_without_noise(yaw_vf_wz, yaw_vf_wz_noise):
     ax2.set_xlabel("Frame #", fontsize=20)
     ax2.set_ylabel("Yaw change rate [rad/s]", fontsize=20)
     ax2.legend(["Noised yaw change rate", "Yaw change rate ground truth"], prop={"size": 20}, loc="best")
+
 def plot_error(err_cov_x, err_cov_y, err_cov_yaw=None):
     """
     Plots the error for x, y and their predicted sigma values for each frame
@@ -91,7 +92,7 @@ def plot_error(err_cov_x, err_cov_y, err_cov_yaw=None):
         fontsize=15)
     ax2.set_xlabel("Frame #", fontsize=15)
     ax2.set_ylabel("Error (y_gt - y_predicted) [m]", fontsize=15)
-    ax2.legend(["Error (y_gt - x_predicted) [m]", "Predicted variance"], prop={"size": 15}, loc="best")
+    ax2.legend(["Error (y_gt - y_predicted) [m]", "Predicted variance"], prop={"size": 15}, loc="best")
 
     if err_cov_yaw:
         err_yaw, cov_yaw = err_cov_yaw
@@ -103,7 +104,7 @@ def plot_error(err_cov_x, err_cov_y, err_cov_yaw=None):
             fontsize=15)
         ax3.set_xlabel("Frame #", fontsize=15)
         ax3.set_ylabel("Error (yaw_gt - yaw_predicted) [rad]", fontsize=15)
-        ax3.legend(["Error (yaw_gt - x_predicted) [m]", "Predicted variance"], prop={"size": 15}, loc="best")
+        ax3.legend(["Error (yaw_gt - yaw_predicted) [m]", "Predicted variance"], prop={"size": 15}, loc="best")
 
 
 def plot_trajectory_comparison_with_and_without_noise(enu, enu_noise, enu_predicted=None):

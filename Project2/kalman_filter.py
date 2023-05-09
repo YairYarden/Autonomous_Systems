@@ -26,13 +26,13 @@ class KalmanFilter:
         self.sigma_n = sigma_n
         self.is_dead_reckoning = is_dead_reckoning
 
+        # Constant velocity model
         # Matrices notation as in the lecture
         # Coordinates : [x,y, vx, vy] : 4x1
         self.A = np.eye(4, dtype=float)
         self.A[0, 2] = delta_t
         self.A[1, 3] = delta_t
 
-        # Constant velocity model
         self.B = np.zeros([4, 4], dtype=float)
 
         # Estimating only x,y
@@ -64,6 +64,19 @@ class KalmanFilter:
         maxE = np.max(np.sum(np.abs(X_Y_GT[converge_delay:] - X_Y_est[converge_delay:]), axis=1))
 
         return RMSE, maxE
+
+    @staticmethod
+    def compute_containment_percent(err_cov_x, err_cov_y):
+        err_x, cov_x = err_cov_x
+        err_y, cov_y = err_cov_y
+
+        count_x = np.count_nonzero(np.abs(err_x) <= cov_x)
+        count_y = np.count_nonzero(np.abs(err_y) <= cov_y)
+
+        containment_percent_x = (count_x / len(err_x)) * 100
+        containment_percent_y = (count_y / len(err_y)) * 100
+
+        return containment_percent_x, containment_percent_y
 
     def kalman_filter_iter(self, prev_mu, prev_sigma, z, curr_time):
         """
@@ -107,6 +120,7 @@ class KalmanFilter:
         prev_sigma = np.zeros([4, 4], dtype=float)
         prev_sigma[0, 0] = variance_amp * (self.sigma_xy ** 2)
         prev_sigma[1, 1] = variance_amp * (self.sigma_xy ** 2)
+
         cov_mat = np.zeros([enu_kf.shape[0], 4])
         num_frames = enu_kf.shape[0]
         for iFrame in range(num_frames):
@@ -121,7 +135,144 @@ class KalmanFilter:
             prev_sigma = sigma_t
 
         return enu_kf, cov_mat
+# ------------------------------------------------------------------------------------------------- #
+class KalmanFilterConstAcc:
+    """
+    class for the implementation of Kalman filter
+    """
 
+    def __init__(self, enu_noise, times, sigma_xy, sigma_n, delta_t=1, is_dead_reckoning=False):
+        """
+        Args:
+            enu_noise: enu data with noise
+            times: elapsed time in seconds from the first timestamp in the sequence
+            sigma_xy: sigma in the x and y axis as provided in the question
+            sigma_n: hyperparameter used to fine tune the filter
+            is_dead_reckoning: should dead reckoning be applied after 5.0 seconds when applying the filter
+        """
+        self.enu_noise = enu_noise
+        self.times = times
+        self.sigma_xy = sigma_xy
+        self.sigma_n = sigma_n
+        self.is_dead_reckoning = is_dead_reckoning
+
+        # Constant acceleration model
+        # Coordinates : [x,y, vx, vy, ax, ay] : 6x1
+        self.A = np.eye(6, dtype=float)
+        self.A[0, 2] = delta_t
+        self.A[0, 4] = 0.5 * (delta_t ** 2)
+        self.A[1, 3] = delta_t
+        self.A[1, 5] = 0.5 * (delta_t ** 2)
+        self.A[2, 4] = delta_t
+        self.A[3, 5] = delta_t
+
+        # Constant velocity model
+        self.B = np.zeros([6, 6], dtype=float)
+
+        # Estimating only x,y
+        self.C = np.zeros([2, 6], dtype=float)
+        self.C[0, 0] = 1
+        self.C[1, 1] = 1
+
+        self.Q = (sigma_xy ** 2) * np.eye(2, dtype=float)
+
+        self.R = np.zeros([6, 6], dtype=float)
+        self.R[4, 4] = delta_t * (sigma_n ** 2)
+        self.R[5, 5] = delta_t * (sigma_n ** 2)
+
+
+    @staticmethod
+    def calc_RMSE_maxE(X_Y_GT, X_Y_est):
+        """
+        That function calculates RMSE and maxE
+
+        Args:
+            X_Y_GT (np.ndarray): ground truth values of x and y
+            X_Y_est (np.ndarray): estimated values of x and y
+
+        Returns:
+            (float, float): RMSE, maxE
+        """
+
+        converge_delay = 100
+        RMSE = np.sqrt(np.mean((X_Y_GT[converge_delay:] - X_Y_est[converge_delay:]) ** 2))
+        maxE = np.max(np.sum(np.abs(X_Y_GT[converge_delay:] - X_Y_est[converge_delay:]), axis=1))
+
+        return RMSE, maxE
+
+    @staticmethod
+    def compute_containment_percent(err_cov_x, err_cov_y):
+        err_x, cov_x = err_cov_x
+        err_y, cov_y = err_cov_y
+
+        count_x = np.count_nonzero(np.abs(err_x) <= cov_x)
+        count_y = np.count_nonzero(np.abs(err_y) <= cov_y)
+
+        containment_percent_x = (count_x / len(err_x)) * 100
+        containment_percent_y = (count_y / len(err_y)) * 100
+
+        return containment_percent_x, containment_percent_y
+
+    def kalman_filter_iter(self, prev_mu, prev_sigma, z, curr_time):
+        """
+        Args:
+            prev_mu: previous mu
+            prev_sigma: previous sigma
+            z: measurement
+            curr_time: current time
+
+        Returns:
+            mu, Sigma
+        """
+
+        # Prediction
+        mu_pred = np.dot(self.A, prev_mu)  # B is zero cause of constant velocity
+        sigma_pred = np.dot(self.A, np.dot(prev_sigma, self.A.T)) + self.R
+
+        # Kalman Gain
+        inv_mat = np.linalg.inv(np.dot(self.C, np.dot(sigma_pred, self.C.T)) + self.Q)
+        if not (self.is_dead_reckoning) or curr_time < 5.0:
+            K = np.dot(sigma_pred, np.dot(self.C.T, inv_mat))
+        else:
+            K = np.zeros([6, 2], dtype=float)
+
+        # Correction
+        z = z[0:2, :]
+        mu = mu_pred + np.dot(K, (z - np.dot(self.C, mu_pred)))
+        sigma = np.dot((np.eye(6, dtype=float) - np.dot(K, self.C)), sigma_pred)
+
+        return mu, sigma
+
+    def run(self, variance_amp=3):
+        """
+        Runs the Kalman filter
+
+        outputs: enu_kf, cov_mat
+        """
+        # Initialize
+        enu_kf = np.zeros(self.enu_noise[:, 0:2].shape)  # x,y
+        prev_mu = np.zeros([6, 1], dtype=float)
+        prev_sigma = np.zeros([6, 6], dtype=float)
+        prev_sigma[0, 0] = variance_amp * (self.sigma_xy ** 2)
+        prev_sigma[1, 1] = variance_amp * (self.sigma_xy ** 2)
+
+        cov_mat = np.zeros([enu_kf.shape[0], 4])
+        num_frames = enu_kf.shape[0]
+        for iFrame in range(num_frames):
+            curr_enu = self.enu_noise[iFrame, 0:2].T[np.newaxis]
+            z = np.vstack((curr_enu.T, np.zeros([4, 1], dtype=float)))
+            mu_t, sigma_t = self.kalman_filter_iter(prev_mu, prev_sigma, z, self.times[iFrame])
+            enu_kf[iFrame, :] = mu_t[0:2, 0]
+            cov_mat[iFrame, :] = sigma_t[0, 0], sigma_t[0, 1], sigma_t[1, 0], sigma_t[1, 1]
+
+            # Update
+            prev_mu = mu_t
+            prev_sigma = sigma_t
+
+        return enu_kf, cov_mat
+
+
+# ------------------------------------------------------------------------------------------------- #
 class ExtendedKalmanFilter:
     """
     class for the implementation of the extended Kalman filter
@@ -167,7 +318,7 @@ class ExtendedKalmanFilter:
         self.R_hat = np.diag(np.array([sigma_vf ** 2, sigma_wz ** 2]))
 
         # Init Sigma
-        self.sigma_0 = np.diag(np.array([k*(sigma_xy**2), k*(sigma_xy**2), sigma_theta]))
+        self.sigma_0 = np.diag(np.array([k*(sigma_xy**2), k*(sigma_xy**2), k*sigma_theta]))
 
     @staticmethod
     def g_func(vf, wz, prev_mu, delta_t):
@@ -196,6 +347,19 @@ class ExtendedKalmanFilter:
         maxE = np.max(np.sum(np.abs(X_Y_GT[converge_delay:] - X_Y_est[converge_delay:]), axis=1))
 
         return RMSE, maxE
+
+    @staticmethod
+    def compute_containment_percent(err_cov_x, err_cov_y):
+        err_x, cov_x = err_cov_x
+        err_y, cov_y = err_cov_y
+
+        count_x = np.count_nonzero(np.abs(err_x) <= cov_x)
+        count_y = np.count_nonzero(np.abs(err_y) <= cov_y)
+
+        containment_percent_x = (count_x / len(err_x)) * 100
+        containment_percent_y = (count_y / len(err_y)) * 100
+
+        return containment_percent_x, containment_percent_y
 
     def extended_kalman_filter_iter(self, prev_mu, prev_sigma, yaw, vf, wz, z, delta_t, curr_time):
 
@@ -237,7 +401,7 @@ class ExtendedKalmanFilter:
         # Collect results
         enu_ekf = np.zeros(self.enu_noise[:, 0:2].shape)  # x,y
         yaw_ekf = np.zeros(self.enu_noise[:, 0].shape)
-        cov_mat = np.zeros([enu_ekf.shape[0], 5])
+        cov_mat = np.zeros([enu_ekf.shape[0], 3])
 
         # Extract yaw, vf, wz
         yaw_vec = self.yaw_vf_wz[:, 0]
@@ -254,7 +418,7 @@ class ExtendedKalmanFilter:
             z = self.enu_noise[iFrame, 0:2].T[np.newaxis]
             mu_t, sigma_t = self.extended_kalman_filter_iter(prev_mu, prev_sigma, yaw_vec[iFrame], vf_vec[iFrame], wz_vec[iFrame], z.T, self.delta_t, self.times[iFrame])
             enu_ekf[iFrame, :] = mu_t[0:2, 0]
-            cov_mat[iFrame, :] = sigma_t[0, 0], sigma_t[0, 1], sigma_t[1, 0], sigma_t[1, 1], sigma_t[2, 2]
+            cov_mat[iFrame, :] = sigma_t[0, 0],  sigma_t[1, 1], sigma_t[2, 2]
             yaw_ekf[iFrame] = mu_t[2, 0]
 
             # Update
@@ -269,31 +433,37 @@ class ExtendedKalmanFilter:
 #
 #     def __init__(self, sigma_x_y_theta, variance_r1_t_r2, variance_r_phi):
 #
-#                 """
+#         """
 #         Args:
 #             variance_x_y_theta: variance in x, y and theta respectively
 #             variance_r1_t_r2: variance in rotation1, translation and rotation2 respectively
 #             variance_r_phi: variance in the range and bearing
 #         """
 #
-#         self.sigma_x_y_theta = #TODO
-#         self.variance_r_phi = #TODO
-#         self.R_x = #TODO
+#         self.sigma_x_y_theta = sigma_x_y_theta
+#         self.variance_r1_t_r2 = variance_r1_t_r2
+#         self.variance_r_phi = variance_r_phi
+#         self.R_x = np.diag(np.sqrt(variance_r1_t_r2))
 #
 #     def predict(self, mu_prev, sigma_prev, u, N):
 #         # Perform the prediction step of the EKF
 #         # u[0]=translation, u[1]=rotation1, u[2]=rotation2
 #
-#         delta_trans, delta_rot1, delta_rot2 = #TODO
-#         theta_prev = #TODO
+#         delta_trans, delta_rot1, delta_rot2 = u['t'], u['r1'], u['r2']
+#         theta_prev = mu_prev[2]
 #
-#         F = #TODO
-#         G_x = #TODO
-#         G = #TODO
-#         V = #TODO
+#         F = np.hstack((np.eye(3,dtype=float), np.zeros([3,2*N]) ))
+#         G_x = np.array([[0,0, -1*delta_trans*math.sin(theta_prev+delta_rot1)], [0,0, delta_trans*math.cos(theta_prev+delta_rot1)], [0,0,0]])
+#         G = np.eye(3+2*N,dtype=float) + np.dot(F.T,np.dot(G_x,F))
+#         V = np.array([[-delta_trans*math.sin(theta_prev+delta_rot1), delta_trans*math.cos(theta_prev+delta_rot1),0],
+#                       [delta_trans*math.cos(theta_prev+delta_rot1), delta_trans*math.sin(theta_prev+delta_rot1), 0],
+#                       [1,0,1]])
 #
-#         mu_est = #TODO
-#         sigma_est = #TODO
+#         R_x = np.dot(V, np.dot(self.R_hat, V.T))
+#         R = np.dot(F.T, np.dot(R_x, F))
+#
+#         mu_est = mu_prev + np.dot(F.T , np.array([[delta_trans*math.cos(theta_prev+delta_rot1)], [delta_trans*math.sin(theta_prev+delta_rot1)],[delta_rot1+delta_rot2]]))
+#         sigma_est = sigma_est = np.dot(G, np.dot(sigma_prev,G.T)) + R
 #
 #         return mu_est, sigma_est
 #
@@ -326,27 +496,28 @@ class ExtendedKalmanFilter:
 #
 #             delta = mu[mu_j_x_idx : mu_j_y_idx + 1] - mu[0 : 2]
 #             q = delta.dot(delta)
-#             z_hat[Z_j_x_idx : Z_j_y_idx + 1] = #TODO
+#             z_hat[Z_j_x_idx : Z_j_y_idx + 1] = np.array([[q_sqrt],[normalize_angle((np.arctan2(delta_y,delta_x) - theta))]],dtype=float).T #TODO
 #
 #             I = np.diag(5*[1])
 #             F_j = np.hstack((I[:,:3], np.zeros((5, 2*j)), I[:,3:], np.zeros((5, 2*N-2*(j+1)))))
 #
-#             Hi = #TODO
+#             Hi = (1/q)*np.dot(np.array([[-q_sqrt*delta_x, -q_sqrt*delta_y, 0, q_sqrt*delta_x, q_sqrt*delta_y ],
+#                                         [delta_y, -delta_x, -q, -delta_y, delta_x]],dtype=float),F_j)
 #
 #             if H is None:
 #                 H = Hi.copy()
 #             else:
 #                 H = np.vstack((H, Hi))
 #
-#         Q = #TODO
-#         S = #TODO
-#         K = #TODO
+#         Q = np.diag(np.repeat(10*np.sqrt(self.variance_r_phi), int(H.shape[0]/2) ))
+#         S = np.linalg.inv(np.dot(H, np.dot(sigma_pred, H.T)) + Q)
+#         K = sigma_pred.dot((H.T).dot(S))
 #
-#         diff = #TODO
+#         diff = Z - z_hat
 #         diff[1::2] = normalize_angles_array(diff[1::2])
 #
 #         mu = mu + K.dot(diff)
-#         sigma = #TODO
+#         sigma = (np.eye(sigma_pred.shape[0]) - K.dot(H)).dot(sigma_pred)
 #
 #         mu[2] = normalize_angle(mu[2])
 #
@@ -419,4 +590,4 @@ class ExtendedKalmanFilter:
 #             frames.append(frame)
 #
 #         return frames, mu_arr, mu_arr_gt, sigma_x_y_t_px1_py1_px2_py2
-#
+
