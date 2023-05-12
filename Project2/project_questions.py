@@ -173,15 +173,16 @@ class ProjectQuestions:
         err_x = self.enu[:, 0] - enu_ekf[:, 0]
         err_cov_x = (err_x, np.sqrt(cov_mat[:, 0]))
         err_y = self.enu[:, 1] - enu_ekf[:, 1]
-        err_cov_y = (err_y, np.sqrt(cov_mat[:, 1]))
+        err_cov_y = (err_y, np.sqrt(cov_mat[:, 3]))
         err_yaw = self.yaw_vf_wz[:, 0] - yaw_ekf
-        err_cov_yaw = (err_yaw, np.sqrt(cov_mat[:, 2]))
+        err_cov_yaw = (err_yaw, np.sqrt(cov_mat[:, 4]))
         graphs.plot_error(err_cov_x, err_cov_y, err_cov_yaw)
 
         # Compute containment percent
-        containment_percent_x, containment_percent_y = ekf.compute_containment_percent(err_cov_x, err_cov_y)
+        containment_percent_x, containment_percent_y, containment_percent_yaw = ekf.compute_containment_percent(err_cov_x, err_cov_y, err_cov_yaw)
         print('Containment percent X : ', containment_percent_x)
         print('Containment percent Y : ', containment_percent_y)
+        print('Containment percent Yaw : ', containment_percent_yaw)
 
         # EKF estimated path animation
         trajectory_animation = graphs.build_animation(self.enu[:, 0:2], enu_ekf_dead_reckon, enu_ekf, cov_mat[:, 0:4], title="Trajectory Animation", xlabel="East [meters]",

@@ -349,17 +349,28 @@ class ExtendedKalmanFilter:
         return RMSE, maxE
 
     @staticmethod
-    def compute_containment_percent(err_cov_x, err_cov_y):
+    def compute_containment_percent(err_cov_x, err_cov_y, err_cov_yaw):
         err_x, cov_x = err_cov_x
         err_y, cov_y = err_cov_y
+        err_yaw, cov_yaw = err_cov_yaw
+
+        converge_delay = 100
+        err_x = err_x[converge_delay:]
+        cov_x = cov_x[converge_delay:]
+        err_y = err_y[converge_delay:]
+        cov_y = cov_y[converge_delay:]
+        err_yaw = err_yaw[converge_delay:]
+        cov_yaw = cov_yaw[converge_delay:]
 
         count_x = np.count_nonzero(np.abs(err_x) <= cov_x)
         count_y = np.count_nonzero(np.abs(err_y) <= cov_y)
+        count_yaw = np.count_nonzero(np.abs(err_yaw) <= cov_yaw)
 
         containment_percent_x = (count_x / len(err_x)) * 100
         containment_percent_y = (count_y / len(err_y)) * 100
+        containment_percent_yaw = (count_yaw / len(err_yaw)) * 100
 
-        return containment_percent_x, containment_percent_y
+        return containment_percent_x, containment_percent_y, containment_percent_yaw
 
     def extended_kalman_filter_iter(self, prev_mu, prev_sigma, yaw, vf, wz, z, delta_t, curr_time):
 
@@ -401,7 +412,7 @@ class ExtendedKalmanFilter:
         # Collect results
         enu_ekf = np.zeros(self.enu_noise[:, 0:2].shape)  # x,y
         yaw_ekf = np.zeros(self.enu_noise[:, 0].shape)
-        cov_mat = np.zeros([enu_ekf.shape[0], 3])
+        cov_mat = np.zeros([enu_ekf.shape[0], 5])
 
         # Extract yaw, vf, wz
         yaw_vec = self.yaw_vf_wz[:, 0]
@@ -418,7 +429,7 @@ class ExtendedKalmanFilter:
             z = self.enu_noise[iFrame, 0:2].T[np.newaxis]
             mu_t, sigma_t = self.extended_kalman_filter_iter(prev_mu, prev_sigma, yaw_vec[iFrame], vf_vec[iFrame], wz_vec[iFrame], z.T, self.delta_t, self.times[iFrame])
             enu_ekf[iFrame, :] = mu_t[0:2, 0]
-            cov_mat[iFrame, :] = sigma_t[0, 0],  sigma_t[1, 1], sigma_t[2, 2]
+            cov_mat[iFrame, :] = sigma_t[0, 0],  sigma_t[0, 1], sigma_t[1, 0], sigma_t[1, 1], sigma_t[2, 2]
             yaw_ekf[iFrame] = mu_t[2, 0]
 
             # Update
