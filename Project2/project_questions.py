@@ -79,7 +79,7 @@ class ProjectQuestions:
         # Plot ENU coordinates with noise
         graphs.plot_trajectory_with_noise(self.enu, self.enu_noise, title="ENU - GT & Noised", xlabel="x[m]", ylabel="y[m]", legend_gt="GT", legend_noise="Noised")
 
-        is_const_acc = True
+        is_const_acc = False
         if(is_const_acc):
             # Kalman filter Const Acc
             sigma_n = 0.65

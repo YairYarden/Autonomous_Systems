@@ -384,11 +384,12 @@ class ExtendedKalmanFilter:
                       [0, 1, -(vf / wz) * math.sin(yaw) + (vf / wz) * math.sin(yaw + wz * delta_t)],
                       [0, 0, 1]])
 
+        R_t1 = np.diag(np.array([0.001, 0.0016, 0.00076]))
         R = np.dot(V, np.dot(self.R_hat, V.T))
 
         # Predicition step
         mu_pred = self.g_func(vf, wz, prev_mu, delta_t)
-        sigma_pred = np.dot(G, np.dot(prev_sigma, G.T)) + R
+        sigma_pred = np.dot(G, np.dot(prev_sigma, G.T)) + R + R_t1
 
         # Kalman Gain
         inv_mat = np.linalg.inv(np.dot(self.H, np.dot(sigma_pred, self.H.T)) + self.Q)
