@@ -305,7 +305,7 @@ class ProjectQuestions:
 
     def run(self):
         # self.Q1()
-        self.Q2()
-        # self.Q3()
+        # self.Q2()
+        self.Q3()
 
 
