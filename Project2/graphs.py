@@ -280,7 +280,7 @@ def plot_single_graph(X_Y, title, xlabel, ylabel, label, is_scatter=False, sigma
         plt.plot(X_Y[:, 0], X_Y[:, 1], label=label)
     
     plt.legend()
-
+    # plt.ylim(-1, 1)
 
 def plot_graph_and_scatter(X_Y0, X_Y1, title, xlabel, ylabel, label0, label1, color0='b', color1='r', point_size=1):
     """

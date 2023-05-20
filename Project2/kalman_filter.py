@@ -60,7 +60,8 @@ class KalmanFilter:
         """
 
         converge_delay = 100
-        RMSE = np.sqrt(np.mean((X_Y_GT[converge_delay:] - X_Y_est[converge_delay:]) ** 2))
+        diff_xy = (X_Y_est[converge_delay:, :] - X_Y_GT[converge_delay:, :])
+        RMSE = np.linalg.norm(diff_xy) / np.sqrt(len(diff_xy[:, 0]))
         maxE = np.max(np.sum(np.abs(X_Y_GT[converge_delay:] - X_Y_est[converge_delay:]), axis=1))
 
         return RMSE, maxE
@@ -195,7 +196,8 @@ class KalmanFilterConstAcc:
         """
 
         converge_delay = 100
-        RMSE = np.sqrt(np.mean((X_Y_GT[converge_delay:] - X_Y_est[converge_delay:]) ** 2))
+        diff_xy = (X_Y_est[converge_delay:, :] - X_Y_GT[converge_delay:, :])
+        RMSE = np.linalg.norm(diff_xy) / np.sqrt(len(diff_xy[:, 0]))
         maxE = np.max(np.sum(np.abs(X_Y_GT[converge_delay:] - X_Y_est[converge_delay:]), axis=1))
 
         return RMSE, maxE
@@ -343,7 +345,8 @@ class ExtendedKalmanFilter:
         """
 
         converge_delay = 100
-        RMSE = np.sqrt(np.mean((X_Y_GT[converge_delay:] - X_Y_est[converge_delay:]) ** 2))
+        diff_xy = (X_Y_est[converge_delay:, :] - X_Y_GT[converge_delay:, :])
+        RMSE = np.linalg.norm(diff_xy) / np.sqrt(len(diff_xy[:, 0]))
         maxE = np.max(np.sum(np.abs(X_Y_GT[converge_delay:] - X_Y_est[converge_delay:]), axis=1))
 
         return RMSE, maxE
@@ -574,8 +577,8 @@ class ExtendedKalmanFilterSLAM:
         sigma_prev = np.diag(np.hstack((np.array(self.sigma_x_y_theta), init_inf_val*np.ones(2*N))))
 
         # sigma for analysis graph sigma_x_y_t + select 2 landmarks
-        landmark1_ind = 3
-        landmark2_ind = 5
+        landmark1_ind = 7
+        landmark2_ind = 13
 
         Index = [0, 1, 2, landmark1_ind, landmark1_ind+1, landmark2_ind, landmark2_ind+1]
         sigma_x_y_t_px1_py1_px2_py2 = sigma_prev[Index,Index].copy()

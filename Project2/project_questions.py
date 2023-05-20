@@ -71,7 +71,7 @@ class ProjectQuestions:
         is_const_acc = False
         if(is_const_acc):
             # Kalman filter Const Acc
-            sigma_n = 0.65
+            sigma_n = 0.35
             kf = KalmanFilterConstAcc(self.enu_noise[:, 0:2], self.times, self.sigma_xy, sigma_n, self.delta_t, is_dead_reckoning=False)
             enu_kf, cov_mat = kf.run(variance_amp=3)
         else:
@@ -288,12 +288,10 @@ class ProjectQuestions:
 
         # Show Animation
         ani = animation.ArtistAnimation(fig, frames, repeat=False)
-        is_show_animation = False
-        if is_show_animation:
-            graphs.show_graphs()
+        graphs.show_graphs()
 
         # Save animation
-        is_save_animation = True
+        is_save_animation = False
         if is_save_animation:
             save_path = "../results/Q3/"
             graphs.save_animation(ani, save_path, "SLAM_animation2")
@@ -302,7 +300,7 @@ class ProjectQuestions:
 
     def run(self):
         # self.Q1()
-        # self.Q2()
-        self.Q3()
+        self.Q2()
+        # self.Q3()
 
 
