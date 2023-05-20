@@ -1,25 +1,14 @@
-import os
-import numpy as np
-
 import data_loader
 import graphs
 from data_preparation import *
 import random
-
-# from utils.misc_tools import error_ellipse
-# from utils.ellipse import draw_ellipse
 import matplotlib.pyplot as plt
 from matplotlib import animation
-# import graphs
 from kalman_filter import KalmanFilter, ExtendedKalmanFilter, ExtendedKalmanFilterSLAM
 from kalman_filter import KalmanFilterConstAcc
 
 random.seed(123)
 np.random.seed(123)
-
-# font = {'size': 20}
-# plt.rc('font', **font)
-
 
 class ProjectQuestions:
     def __init__(self, dataset):
@@ -246,7 +235,8 @@ class ProjectQuestions:
         variance_r1_t_r2 = [0.01**2, 0.1**2, 0.01**2]
         variance_r_phi = [0.0548**2, 0.0548**2]
         # variance_r_phi = [0.3**2, 0.0035**2]
-        sigma_x_y_theta = np.array([variance_r1_t_r2[1], variance_r1_t_r2[1], np.sqrt(2)*variance_r1_t_r2[0]])
+        # sigma_x_y_theta = np.array([variance_r1_t_r2[1], variance_r1_t_r2[1], variance_r1_t_r2[0] + variance_r1_t_r2[2]])
+        sigma_x_y_theta = np.array([0,0,0])
 
         # Add noise
         sensor_data_noised = add_gaussian_noise_dict(sensor_data_gt, list(np.sqrt(np.array(variance_r1_t_r2))))
