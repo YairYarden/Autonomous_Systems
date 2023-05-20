@@ -455,7 +455,7 @@ class ExtendedKalmanFilterSLAM:
         self.sigma_x_y_theta = sigma_x_y_theta
         self.variance_r1_t_r2 = variance_r1_t_r2
         self.variance_r_phi = variance_r_phi
-        self.R_x = np.diag(np.sqrt(variance_r1_t_r2))
+        self.R_tilde = np.diag(np.sqrt(variance_r1_t_r2))
 
     def predict(self, mu_prev, sigma_prev, u, N):
         # Perform the prediction step of the EKF
@@ -467,14 +467,19 @@ class ExtendedKalmanFilterSLAM:
         F = np.hstack((np.eye(3,dtype=float), np.zeros([3,2*N])))
         G_x = np.array([[0,0, -1*delta_trans*math.sin(theta_prev + delta_rot1)], [0, 0, delta_trans*math.cos(theta_prev + delta_rot1)], [0,0,0]])
         G = np.eye(3+2*N,dtype=float) + np.dot(F.T, np.dot(G_x, F))
+
         V = np.array([[-delta_trans*math.sin(theta_prev+delta_rot1), delta_trans*math.cos(theta_prev+delta_rot1), 0],
                       [delta_trans*math.cos(theta_prev+delta_rot1), delta_trans*math.sin(theta_prev+delta_rot1), 0],
                       [1, 0, 1]])
 
-        R_x = np.dot(V, np.dot(self.R_hat, V.T))
+        # V = np.array([[-delta_trans*math.sin(theta_prev+delta_rot1), math.cos(theta_prev+delta_rot1), 0],
+        #               [delta_trans*math.cos(theta_prev+delta_rot1), math.sin(theta_prev+delta_rot1), 0],
+        #               [1, 0, 1]])
+
+        R_x = np.dot(V, np.dot(self.R_tilde, V.T))
         R = np.dot(F.T, np.dot(R_x, F))
 
-        mu_est = mu_prev + np.dot(F.T , np.array([[delta_trans*math.cos(theta_prev+delta_rot1)], [delta_trans*math.sin(theta_prev+delta_rot1)],[delta_rot1+delta_rot2]]))
+        mu_est = mu_prev + np.squeeze(np.dot(F.T, np.array([[delta_trans*math.cos(theta_prev+delta_rot1)], [delta_trans*math.sin(theta_prev+delta_rot1)],[delta_rot1+delta_rot2]])))
         sigma_est = np.dot(G, np.dot(sigma_prev, G.T)) + R
 
         return mu_est, sigma_est
@@ -508,20 +513,34 @@ class ExtendedKalmanFilterSLAM:
 
             delta = mu[mu_j_x_idx : mu_j_y_idx + 1] - mu[0 : 2]
             q = delta.dot(delta)
-            z_hat[Z_j_x_idx : Z_j_y_idx + 1] = np.array([[q_sqrt],[normalize_angle((np.arctan2(delta_y,delta_x) - theta))]],dtype=float).T #TODO
+            q_sqrt = np.sqrt(q)
+
+            z_hat_range = q_sqrt
+            z_hat_angle = normalize_angle(np.arctan2(delta[1], delta[0]) - theta)
+            z_hat[Z_j_x_idx : Z_j_y_idx + 1] = np.array([z_hat_range, z_hat_angle])
 
             I = np.diag(5*[1])
             F_j = np.hstack((I[:,:3], np.zeros((5, 2*j)), I[:,3:], np.zeros((5, 2*N-2*(j+1)))))
 
-            Hi = (1/q)*np.dot(np.array([[-q_sqrt*delta_x, -q_sqrt*delta_y, 0, q_sqrt*delta_x, q_sqrt*delta_y ],
-                                        [delta_y, -delta_x, -q, -delta_y, delta_x]],dtype=float),F_j)
+            delta_x = delta[0]
+            delta_y = delta[1]
+            Hi_low = (1/q)*(np.array([[-q_sqrt*delta_x, -q_sqrt*delta_y, 0, q_sqrt*delta_x, q_sqrt*delta_y],
+                                     [delta_y, -delta_x, -q, -delta_y, delta_x]], dtype=float))
+
+            Hi = np.dot(Hi_low, F_j)
 
             if H is None:
                 H = Hi.copy()
             else:
                 H = np.vstack((H, Hi))
 
-        Q = np.diag(np.repeat(10*np.sqrt(self.variance_r_phi), int(H.shape[0]/2) ))
+        # Q = np.diag(np.repeat(10*np.sqrt(self.variance_r_phi), int(H.shape[0]/2) ))
+
+        # a = np.array([0.003, 0.003])
+        # Q = np.diag(np.tile(a, m))
+        #
+        Q = np.diag(np.tile(self.variance_r_phi, m))
+
         S = np.linalg.inv(np.dot(H, np.dot(sigma_pred, H.T)) + Q)
         K = sigma_pred.dot((H.T).dot(S))
 
@@ -559,10 +578,10 @@ class ExtendedKalmanFilterSLAM:
         sigma_prev = np.diag(np.hstack((np.array(self.sigma_x_y_theta), init_inf_val*np.ones(2*N))))
 
         # sigma for analysis graph sigma_x_y_t + select 2 landmarks
-        landmark1_ind = 0
-        landmark2_ind = 1
+        landmark1_ind = 3
+        landmark2_ind = 5
 
-        Index = [0, 1 ,2, landmark1_ind, landmark1_ind+1, landmark2_ind, landmark2_ind+1]
+        Index = [0, 1, 2, landmark1_ind, landmark1_ind+1, landmark2_ind, landmark2_ind+1]
         sigma_x_y_t_px1_py1_px2_py2 = sigma_prev[Index,Index].copy()
 
         observed_landmarks = np.zeros(N, dtype=bool)
@@ -604,3 +623,22 @@ class ExtendedKalmanFilterSLAM:
 
         return frames, mu_arr, mu_arr_gt, sigma_x_y_t_px1_py1_px2_py2
 
+    @staticmethod
+    def calc_RMSE_maxE(X_Y_GT, X_Y_est):
+        """
+        That function calculates RMSE and maxE
+
+        Args:
+            X_Y_GT (np.ndarray): ground truth values of x and y
+            X_Y_est (np.ndarray): estimated values of x and y
+
+        Returns:
+            (float, float): RMSE, maxE
+        """
+
+        converge_delay = 20
+        diff_xy = (X_Y_est[converge_delay:, :] - X_Y_GT[converge_delay:, :])
+        RMSE = np.linalg.norm(diff_xy) / np.sqrt(len(diff_xy[:, 0]))
+        maxE = np.max(np.sum(np.abs(X_Y_GT[converge_delay:] - X_Y_est[converge_delay:]), axis=1))
+
+        return RMSE, maxE

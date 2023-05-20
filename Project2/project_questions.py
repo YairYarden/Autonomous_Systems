@@ -8,10 +8,10 @@ import random
 
 # from utils.misc_tools import error_ellipse
 # from utils.ellipse import draw_ellipse
-# import matplotlib.pyplot as plt
-# from matplotlib import animation
+import matplotlib.pyplot as plt
+from matplotlib import animation
 # import graphs
-from kalman_filter import KalmanFilter, ExtendedKalmanFilter #, ExtendedKalmanFilterSLAM
+from kalman_filter import KalmanFilter, ExtendedKalmanFilter, ExtendedKalmanFilterSLAM
 from kalman_filter import KalmanFilterConstAcc
 
 random.seed(123)
@@ -244,8 +244,9 @@ class ProjectQuestions:
         state = self.get_odometry(sensor_data_gt)
 
         variance_r1_t_r2 = [0.01**2, 0.1**2, 0.01**2]
-        variance_r_phi = [0.1**2, 0.001**2]
-        sigma_x_y_theta = np.array([variance_r1_t_r2[1], variance_r1_t_r2[1], variance_r1_t_r2[0]+variance_r1_t_r2[2]])
+        variance_r_phi = [0.0548**2, 0.0548**2]
+        # variance_r_phi = [0.3**2, 0.0035**2]
+        sigma_x_y_theta = np.array([variance_r1_t_r2[1], variance_r1_t_r2[1], np.sqrt(2)*variance_r1_t_r2[0]])
 
         # Add noise
         sensor_data_noised = add_gaussian_noise_dict(sensor_data_gt, list(np.sqrt(np.array(variance_r1_t_r2))))
@@ -254,25 +255,21 @@ class ProjectQuestions:
         # plot trajectory + noise
         graphs.plot_trajectory_with_noise(state, state_noised, 'Noised Trajectory', 'x', 'y', 'Trajectory GT', 'Noised Trajectory')
 
-        import matplotlib.pyplot as plt
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-
         # KalmanFilter
-
         ekf_slam = ExtendedKalmanFilterSLAM(sigma_x_y_theta, variance_r1_t_r2, variance_r_phi)
 
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
         frames, mu_arr, mu_arr_gt, sigma_x_y_t_px1_py1_px2_py2 = ekf_slam.run(sensor_data_gt, sensor_data_noised, landmarks, ax)
 
-        #RMSE, maxE =calc_RMSE_maxE
-
+        RMSE, maxE = ekf_slam.calc_RMSE_maxE(mu_arr_gt[:, 0:2], mu_arr[:, 0:2])
+        print('RMSE: ', RMSE, 'maxE: ', maxE)
 
         # draw the error for x, y and theta
 
         # Plot the estimated error ofof x-y-θ -#landmark values separately and corresponded sigma value along the trajectory
 
         # draw the error
-
 
         graphs.plot_single_graph(mu_arr_gt[:,0] - mu_arr[:,0], "x-$x_n$", "frame", "error", "x-$x_n$",
                                  is_scatter=True, sigma=np.sqrt(sigma_x_y_t_px1_py1_px2_py2[:,0]))
