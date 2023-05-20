@@ -468,13 +468,9 @@ class ExtendedKalmanFilterSLAM:
         G_x = np.array([[0,0, -1*delta_trans*math.sin(theta_prev + delta_rot1)], [0, 0, delta_trans*math.cos(theta_prev + delta_rot1)], [0,0,0]])
         G = np.eye(3+2*N,dtype=float) + np.dot(F.T, np.dot(G_x, F))
 
-        V = np.array([[-delta_trans*math.sin(theta_prev+delta_rot1), delta_trans*math.cos(theta_prev+delta_rot1), 0],
-                      [delta_trans*math.cos(theta_prev+delta_rot1), delta_trans*math.sin(theta_prev+delta_rot1), 0],
+        V = np.array([[-delta_trans*math.sin(theta_prev+delta_rot1), math.cos(theta_prev+delta_rot1), 0],
+                      [delta_trans*math.cos(theta_prev+delta_rot1), math.sin(theta_prev+delta_rot1), 0],
                       [1, 0, 1]])
-
-        # V = np.array([[-delta_trans*math.sin(theta_prev+delta_rot1), math.cos(theta_prev+delta_rot1), 0],
-        #               [delta_trans*math.cos(theta_prev+delta_rot1), math.sin(theta_prev+delta_rot1), 0],
-        #               [1, 0, 1]])
 
         R_x = np.dot(V, np.dot(self.R_tilde, V.T))
         R = np.dot(F.T, np.dot(R_x, F))

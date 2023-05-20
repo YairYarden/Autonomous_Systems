@@ -233,10 +233,10 @@ class ProjectQuestions:
         state = self.get_odometry(sensor_data_gt)
 
         variance_r1_t_r2 = [0.01**2, 0.1**2, 0.01**2]
-        variance_r_phi = [0.0548**2, 0.0548**2]
+        variance_r_phi = [0.118**2, 0.118**2]
         # variance_r_phi = [0.3**2, 0.0035**2]
         # sigma_x_y_theta = np.array([variance_r1_t_r2[1], variance_r1_t_r2[1], variance_r1_t_r2[0] + variance_r1_t_r2[2]])
-        sigma_x_y_theta = np.array([0,0,0])
+        sigma_x_y_theta = np.array([0, 0, 0])
 
         # Add noise
         sensor_data_noised = add_gaussian_noise_dict(sensor_data_gt, list(np.sqrt(np.array(variance_r1_t_r2))))
@@ -286,9 +286,19 @@ class ProjectQuestions:
         ax.set_xlim([-2, 12])
         ax.set_ylim([-2, 12])
 
+        # Show Animation
         ani = animation.ArtistAnimation(fig, frames, repeat=False)
-        graphs.show_graphs()
-        # ani.save('im.mp4', metadata={'artist':'me'})
+        is_show_animation = False
+        if is_show_animation:
+            graphs.show_graphs()
+
+        # Save animation
+        is_save_animation = True
+        if is_save_animation:
+            save_path = "../results/Q3/"
+            graphs.save_animation(ani, save_path, "SLAM_animation2")
+
+        # ani.save('SLAM_animation.mp4', metadata={'artist':'me'})
 
     def run(self):
         # self.Q1()
