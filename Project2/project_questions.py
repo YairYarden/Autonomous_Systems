@@ -234,7 +234,6 @@ class ProjectQuestions:
 
         variance_r1_t_r2 = [0.01**2, 0.1**2, 0.01**2]
         variance_r_phi = [0.118**2, 0.118**2]
-        # variance_r_phi = [0.3**2, 0.0035**2]
         # sigma_x_y_theta = np.array([variance_r1_t_r2[1], variance_r1_t_r2[1], variance_r1_t_r2[0] + variance_r1_t_r2[2]])
         sigma_x_y_theta = np.array([0, 0, 0])
 
@@ -300,7 +299,7 @@ class ProjectQuestions:
 
     def run(self):
         # self.Q1()
-        self.Q2()
-        # self.Q3()
+        # self.Q2()
+        self.Q3()
 
 
