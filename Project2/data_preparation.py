@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def read_landmarks(filename):
     # Reads the world definition and returns a list of landmarks, our 'map'.
     # .
@@ -48,3 +51,33 @@ def read_odometry(filename):
             timestamp = timestamp + 1
 
     return sensor_readings
+
+
+def calculate_trajectory(trueOdometry):
+    trueTrajectory = np.zeros((trueOdometry.__len__(), 3))
+
+    for i in range(1, trueOdometry.__len__()):
+        dr1 = trueOdometry[i - 1]['r1']
+        dt = trueOdometry[i - 1]['t']
+        dr2 = trueOdometry[i - 1]['r2']
+        theta = trueTrajectory[i - 1, 2]
+        dMotion = np.expand_dims(np.array([dt * np.cos(theta + dr1), dt * np.sin(theta + dr1), dr1 + dr2]), 0)
+        trueTrajectory[i, :] = trueTrajectory[i - 1, :] + dMotion
+
+    return trueTrajectory
+
+def generate_measurement_odometry(trueOdometry, sigma_r1, sigma_t, sigma_r2):
+    measurmentOdometry = dict()
+    measured_trajectory = np.zeros((trueOdometry.__len__() + 1, 3))
+    for i, timestamp in enumerate(range(trueOdometry.__len__())):
+        dr1 = trueOdometry[timestamp]['r1'] + float(np.random.normal(0, sigma_r1, 1))
+        dt=trueOdometry[timestamp]['t'] + float(np.random.normal(0,  sigma_t, 1))
+        dr2=trueOdometry[timestamp]['r2'] + float(np.random.normal(0,  sigma_r2, 1))
+        measurmentOdometry[timestamp] = {'r1': dr1,
+                                         't': dt,
+                                         'r2': dr2}
+        theta = measured_trajectory[i, 2]
+        dMotion = np.expand_dims(np.array([dt*np.cos(theta + dr1), dt*np.sin(theta+ dr1),  dr1 + dr2]), 0)
+        measured_trajectory[i + 1, :] = measured_trajectory[i, :] + dMotion
+
+    return measured_trajectory
