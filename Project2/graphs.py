@@ -55,6 +55,7 @@ def plot_vf_wz_with_and_without_noise(yaw_vf_wz, yaw_vf_wz_noise):
     ax2.set_xlabel("Frame #", fontsize=20)
     ax2.set_ylabel("Yaw change rate [rad/s]", fontsize=20)
     ax2.legend(["Noised yaw change rate", "Yaw change rate ground truth"], prop={"size": 20}, loc="best")
+
 def plot_error(err_cov_x, err_cov_y, err_cov_yaw=None):
     """
     Plots the error for x, y and their predicted sigma values for each frame
@@ -64,31 +65,34 @@ def plot_error(err_cov_x, err_cov_y, err_cov_yaw=None):
         err_cov_y: tuple of (numpy array with difference in position across the y axis, predicted sigma in y axis)
         err_cov_yaw: optional, tuple of (numpy array with normalized difference in heading, predicted sigma in heading)
     """
+
     if err_cov_yaw:
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
     else:
         fig, (ax1, ax2) = plt.subplots(1, 2)
+
+
     err_x, cov_x = err_cov_x
     ax1.plot(range(err_x.shape[0]), err_x, 'b')
     ax1.plot(range(len(cov_x)), cov_x, 'r')
     ax1.plot(range(len(cov_x)), [-a for a in cov_x], 'r')
     ax1.set_title(
-        "Error throughout the path along the x axis",
-        fontsize=20)
-    ax1.set_xlabel("Frame #", fontsize=20)
-    ax1.set_ylabel("Error (x_gt - x_predicted) [meters]", fontsize=20)
-    ax1.legend(["Error (x_gt - x_predicted) [meters]", "Predicted variance"], prop={"size": 20}, loc="best")
+        "Error path along the x axis",
+        fontsize=15)
+    ax1.set_xlabel("Frame #", fontsize=15)
+    ax1.set_ylabel("Error (x_gt - x_predicted) [m]", fontsize=15)
+    ax1.legend(["Error (x_gt - x_predicted) [m]", "Predicted variance"], prop={"size": 15}, loc="best")
 
     err_y, cov_y = err_cov_y
     ax2.plot(range(err_y.shape[0]), err_y, 'b')
     ax2.plot(range(len(cov_y)), cov_y, 'r')
     ax2.plot(range(len(cov_y)), [-a for a in cov_y], 'r')
     ax2.set_title(
-        "Error throughout the path along the y axis",
-        fontsize=20)
-    ax2.set_xlabel("Frame #", fontsize=20)
-    ax2.set_ylabel("Error (y_gt - y_predicted) [meters]", fontsize=20)
-    ax2.legend(["Error (y_gt - x_predicted) [meters]", "Predicted variance"], prop={"size": 20}, loc="best")
+        "Error path along the y axis",
+        fontsize=15)
+    ax2.set_xlabel("Frame #", fontsize=15)
+    ax2.set_ylabel("Error (y_gt - y_predicted) [m]", fontsize=15)
+    ax2.legend(["Error (y_gt - y_predicted) [m]", "Predicted variance"], prop={"size": 15}, loc="best")
 
     if err_cov_yaw:
         err_yaw, cov_yaw = err_cov_yaw
@@ -96,11 +100,11 @@ def plot_error(err_cov_x, err_cov_y, err_cov_yaw=None):
         ax3.plot(range(len(cov_yaw)), cov_yaw, 'r')
         ax3.plot(range(len(cov_yaw)), [-a for a in cov_yaw], 'r')
         ax3.set_title(
-            "Error throughout the path in yaw",
-            fontsize=20)
-        ax3.set_xlabel("Frame #", fontsize=20)
-        ax3.set_ylabel("Error (yaw_gt - yaw_predicted) [rad]", fontsize=20)
-        ax3.legend(["Error (yaw_gt - x_predicted) [meters]", "Predicted variance"], prop={"size": 20}, loc="best")
+            "Error path in yaw",
+            fontsize=15)
+        ax3.set_xlabel("Frame #", fontsize=15)
+        ax3.set_ylabel("Error (yaw_gt - yaw_predicted) [rad]", fontsize=15)
+        ax3.legend(["Error (yaw_gt - yaw_predicted) [m]", "Predicted variance"], prop={"size": 15}, loc="best")
 
 
 def plot_trajectory_comparison_with_and_without_noise(enu, enu_noise, enu_predicted=None):
@@ -137,7 +141,7 @@ def plot_trajectory_comparison(enu, enu_predicted):
     fig, ax = plt.subplots()
     ax.plot(enu[:, 0], enu[:, 1], 'b')
     ax.plot(enu_predicted[:, 0], enu_predicted[:, 1], 'g')
-    ax.set_aspect('equal', adjustable='box')
+    # ax.set_aspect('equal', adjustable='box')
     ax.set_title("Comparison of the ground truth trajectory and the predicted trajectory", fontsize=20)
     ax.set_xlabel("East [meters]", fontsize=20)
     ax.set_ylabel("North [meters]", fontsize=20)
@@ -158,7 +162,7 @@ def plot_trajectory_comparison_dead_reckoning(enu, enu_predicted, enu_dead_recko
     ax.plot(enu[:, 0], enu[:, 1], 'b')
     ax.plot(enu_predicted[:, 0], enu_predicted[:, 1], 'g')
     ax.plot(enu_dead_reckoning[:, 0], enu_dead_reckoning[:, 1], 'r')
-    ax.set_aspect('equal', adjustable='box')
+    # ax.set_aspect('equal', adjustable='box')
     ax.set_title("Comparison of the ground truth trajectory, the predicted trajectory and the dead reckoning trajectory", fontsize=20)
     ax.set_xlabel("East [meters]", fontsize=20)
     ax.set_ylabel("North [meters]", fontsize=20)
@@ -193,7 +197,7 @@ def plot_trajectory_with_noise(pos_xy_gt, pos_xy_noise, title, xlabel, ylabel, l
     fig, ax = plt.subplots()
     ax.plot(pos_xy_gt[:, 0], pos_xy_gt[:, 1], 'b')
     ax.scatter(pos_xy_noise[:, 0], pos_xy_noise[:, 1],c='r',marker='.')
-    ax.set_aspect('equal', adjustable='box')
+    # ax.set_aspect('equal', adjustable='box')
     ax.set_title(title, fontsize=20)
     ax.set_xlabel(xlabel, fontsize=20)
     ax.set_ylabel(ylabel, fontsize=20)
@@ -210,7 +214,7 @@ def plot_trajectory_and_height(locations, title1, xlabel1, ylabel1, title2, xlab
     """
     fig, (ax1, ax2) = plt.subplots(1, 2)
     ax1.plot(locations[:, 0], locations[:, 1], 'b')
-    ax1.set_aspect('equal', adjustable='box')
+    # ax1.set_aspect('equal', adjustable='box')
     ax1.set_title(title1, fontsize=20)
     ax1.set_xlabel(xlabel1, fontsize=20)
     ax1.set_ylabel(ylabel1, fontsize=20)
@@ -276,7 +280,7 @@ def plot_single_graph(X_Y, title, xlabel, ylabel, label, is_scatter=False, sigma
         plt.plot(X_Y[:, 0], X_Y[:, 1], label=label)
     
     plt.legend()
-
+    # plt.ylim(-1, 1)
 
 def plot_graph_and_scatter(X_Y0, X_Y1, title, xlabel, ylabel, label0, label1, color0='b', color1='r', point_size=1):
     """
@@ -362,7 +366,8 @@ def build_animation(X_Y0, X_Y1, X_Y2, x_xy_xy_y, title, xlabel, ylabel, label0, 
             x_min = c - w
             x_max = c + w
         ax.set_xlim(x_min, x_max)
-        ax.set_ylim(y_min, y_max)
+        # ax.set_ylim(y_min, y_max)
+        ax.set_ylim(-10, 100)
         ax.set_title(title)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
@@ -400,9 +405,10 @@ def build_animation(X_Y0, X_Y1, X_Y2, x_xy_xy_y, title, xlabel, ylabel, label0, 
 
 def save_animation(ani, basedir, file_name):
     print("Saving animation")
-    Writer = animation.writers['ffmpeg']
-    writer = Writer(fps=50, metadata=dict(artist='Me'), bitrate=1800)
-    ani.save(os.path.join(basedir, f'{file_name}.mp4'), writer=writer)
+    # Writer = animation.writers['ffmpeg']
+    # writer = Writer(fps=50, metadata=dict(artist='Me'), bitrate=1800)
+    # ani.save(os.path.join(basedir, f'{file_name}.mp4'), writer=writer)
+    ani.save(os.path.join(basedir, f'{file_name}.gif'), writer='pillow', fps=50)
     print("Animation saved")
 
 

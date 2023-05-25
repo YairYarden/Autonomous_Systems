@@ -4,7 +4,12 @@
 # Kalman filter, Extended Kalman Filter and EKF-SLAM. 
 
 import os
+
+import numpy as np
+from kalman_filter import KalmanFilter
 from data_loader import DataLoader
+from project_questions import ProjectQuestions
+
 # from project_questions import ProjectQuestions
 
 
@@ -12,14 +17,11 @@ if __name__ == "__main__":
 
     basedir = "../kitti_data"
     date = '2011_09_26'
-    drive = '0061' #"TODO" - The recording number I used in the sample during class is (insert your correct record number)
-
+    drive = '0061'
     dat_dir = os.path.join(basedir,"Ex3_data")
+
 
     dataset = DataLoader(basedir, date, drive, dat_dir)
 
-    # project = ProjectQuestions(dataset)
-    # project.run()
-
-    print("hello world")
-
+    project = ProjectQuestions(dataset)
+    project.run()
