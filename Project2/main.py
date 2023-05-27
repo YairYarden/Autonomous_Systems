@@ -40,8 +40,8 @@ def Q1():
 
     # Run Particle Filter
     # Initalize
-    sigma_range = 0.01
-    sigma_bearing = 0.001
+    sigma_range = 0.1
+    sigma_bearing = 0.01
     numberOfParticles = 1000
     pf = ParticlesFilter(trueLandmarks, sigma_r1, sigma_t, sigma_r2, sigma_range, sigma_bearing, numberOfParticles)
 
@@ -50,8 +50,11 @@ def Q1():
 
     # Plot final frame
     graphs.draw_pf_frame(trueTrajectory, pf.history, trueLandmarks, pf.particles, "Final Frame")
-    plt.show()
 
+    # Build animation
+    plt.close('all')
+    pf_animation = graphs.build_animation(trueTrajectory[:, 0:2], pf.history[:, 0:2])
+    plt.show()
     print("Question 1 is done")
 
 def Q2():

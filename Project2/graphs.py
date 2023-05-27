@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 import numpy as np
+import matplotlib.animation as animation
+
 
 def plot_trajectory(trueTrajectory, trueLandmarks):
     plt.figure(figsize=(8, 8))
@@ -57,3 +59,60 @@ def draw_pf_frame(trueTrajectory, measured_trajectory, trueLandmarks, particles,
     ax.set_xlabel("X [m]", fontsize=10)
     ax.set_ylabel("Y [m]", fontsize=10)
     ax.legend(['Ground Truth', 'Landmarks', 'Particles and their heading', 'Particle filter estimated trajectory'], prop={"size": 10}, loc="best")
+
+
+def build_animation(X_Y0, X_Y1, title="Particle Filter Animation", xlabel="x[m]", ylabel="y[m]", label0="GT", label1="PF"):
+    frames = []
+
+    fig = plt.figure()
+    fig.set_size_inches(10, 10)
+    ax = fig.add_subplot(1, 1, 1)
+    print("Creating animation")
+
+    x0, y0, x1, y1 = [], [], [], []
+    val0, = plt.plot([], [], 'b-', animated=True, label=label0)
+    val1, = plt.plot([], [], 'r-', animated=True, label=label1)
+
+    plt.legend()
+
+    values = np.hstack((X_Y0, X_Y1))
+
+    def init():
+        margin = 5
+        x_min = np.min(X_Y0[:, 0]) - margin
+        x_max = np.max(X_Y0[:, 0]) + margin
+        y_min = np.min(X_Y0[:, 1]) - margin
+        y_max = np.max(X_Y0[:, 1]) + margin
+        if (x_max - x_min) > (y_max - y_min):
+            h = (margin + x_max - x_min) / 2
+            c = (y_max + y_min) / 2
+            y_min = c - h
+            y_max = c + h
+        else:
+            w = (margin + y_max - y_min) / 2
+            c = (x_max + x_min) / 2
+            x_min = c - w
+            x_max = c + w
+        ax.set_xlim(x_min, x_max)
+        ax.set_ylim(y_min, y_max)
+        # ax.set_ylim(-6, 15)
+        ax.set_title(title)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        val0.set_data([], [])
+        val1.set_data([], [])
+
+        return val0, val1
+
+    def update(frame):
+        x0.append(frame[0])
+        y0.append(frame[1])
+        x1.append(frame[2])
+        y1.append(frame[3])
+        val0.set_data(x0, y0)
+        val1.set_data(x1, y1)
+
+        return val0, val1
+
+    anim = animation.FuncAnimation(fig, update, frames=values, init_func=init, interval=10, blit=True)
+    return anim
