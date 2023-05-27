@@ -71,8 +71,8 @@ def generate_measurement_odometry(trueOdometry, sigma_r1, sigma_t, sigma_r2):
     measured_trajectory = np.zeros((trueOdometry.__len__() + 1, 3))
     for i, timestamp in enumerate(range(trueOdometry.__len__())):
         dr1 = trueOdometry[timestamp]['r1'] + float(np.random.normal(0, sigma_r1, 1))
-        dt=trueOdometry[timestamp]['t'] + float(np.random.normal(0,  sigma_t, 1))
-        dr2=trueOdometry[timestamp]['r2'] + float(np.random.normal(0,  sigma_r2, 1))
+        dt = trueOdometry[timestamp]['t'] + float(np.random.normal(0,  sigma_t, 1))
+        dr2 = trueOdometry[timestamp]['r2'] + float(np.random.normal(0,  sigma_r2, 1))
         measurmentOdometry[timestamp] = {'r1': dr1,
                                          't': dt,
                                          'r2': dr2}

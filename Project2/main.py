@@ -13,6 +13,7 @@ import sys
 
 import data_preparation
 import graphs
+from ParticlesFilter import ParticlesFilter
 
 np.random.seed(19)
 
@@ -38,7 +39,13 @@ if __name__ == "__main__":
     measured_trajectory = data_preparation.generate_measurement_odometry(trueOdometry, sigma_r1, sigma_t, sigma_r2)
     graphs.plot_trajectory_and_measured_trajectory(trueTrajectory, measured_trajectory, trueLandmarks)
 
-    plt.show()
+    # Run Particle Filter
+    # Initalize
+    sigma_range = 1
+    sigma_bearing = 0.1
+    numberOfParticles = 1000
+    pf = ParticlesFilter(trueLandmarks, sigma_r1, sigma_t, sigma_r2, sigma_range, sigma_bearing, numberOfParticles)
+    pf.run(trueLandmarks, trueOdometry, trueTrajectory)
 
     print("Question 1 is done")
     # --------------------------------------------------- #
