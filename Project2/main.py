@@ -17,8 +17,7 @@ from ParticlesFilter import ParticlesFilter
 
 np.random.seed(19)
 
-if __name__ == "__main__":
-    # -------------------- Question 1-------------------- #
+def Q1():
     # Read the data
     print("Reading ground truth landmarks")
     trueLandmarks = np.array(data_preparation.read_landmarks("D:\Masters Degree\Courses\Sensors In Autonomous Systems 0510-7951\Homework\HW_3\Landmarks\LastID_1.csv"))
@@ -41,11 +40,26 @@ if __name__ == "__main__":
 
     # Run Particle Filter
     # Initalize
-    sigma_range = 1
-    sigma_bearing = 0.1
+    sigma_range = 0.01
+    sigma_bearing = 0.001
     numberOfParticles = 1000
     pf = ParticlesFilter(trueLandmarks, sigma_r1, sigma_t, sigma_r2, sigma_range, sigma_bearing, numberOfParticles)
+
+    # Run particle filter
     pf.run(trueLandmarks, trueOdometry, trueTrajectory)
 
+    # Plot final frame
+    graphs.draw_pf_frame(trueTrajectory, pf.history, trueLandmarks, pf.particles, "Final Frame")
+    plt.show()
+
     print("Question 1 is done")
-    # --------------------------------------------------- #
+
+def Q2():
+    print("Question 2 is done")
+
+def Q3():
+    print("Question 3 is done")
+
+if __name__ == "__main__":
+    Q1()
+

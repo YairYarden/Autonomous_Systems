@@ -69,8 +69,6 @@ class ParticlesFilter:
         dr2 = dr2.reshape(-1, 1)
         theta = self.particles[:, 2].reshape(-1, 1)
 
-        tmp = dt * np.cos(theta + dr1)
-
         dMotion = np.concatenate((
             dt * np.cos(theta + dr1),
             dt * np.sin(theta + dr1),
@@ -87,7 +85,7 @@ class ParticlesFilter:
         """
         MeasurementPrediction = np.zeros((self.particles.shape[0], 2))  # range and bearing for each
         for i, particle in enumerate(self.particles):
-            closest_landmark_idx =  np.argmin(np.linalg.norm(self.worldLandmarks - particle[0:2])) # Size : NumLandmarks
+            closest_landmark_idx =  np.argmin(np.linalg.norm(self.worldLandmarks - particle[0:2], axis=1)) # Size : NumLandmarks
             dist_xy =  self.worldLandmarks[closest_landmark_idx] - particle[0:2]
             r = np.linalg.norm(dist_xy)
             phi = np.arctan2(self.worldLandmarks[closest_landmark_idx,1] - particle[1], self.worldLandmarks[closest_landmark_idx,0]-particle[0]) - particle[2] # TODO (hint-differecne between the theta (landmark--particle) minus the heading of the particle)
@@ -103,12 +101,12 @@ class ParticlesFilter:
             car_measurement - the sensor measurement to the closet landmark (range, bearing) as seen from the position of the car
             MeasurementPredction - the Particles locations (range, bearing) related to the landmark
         """
-        cov = np.cov(car_measurement - MeasurementPrediction) # TODO ( sensor measurements covariance matrix)
+        cov = np.cov((MeasurementPrediction - car_measurement).T) # TODO ( sensor measurements covariance matrix)
         for i, relatedLocations in enumerate(MeasurementPrediction):
-            d = car_measurement - MeasurementPrediction # TODO
+            d = car_measurement - relatedLocations # TODO
             d[1] = ParticlesFilter.normalize_angle(d[1])
-            Mahalanobis_distance = np.dot(np.dot(d.T, np.linalg.inv(cov)), d) # TODO (hint- use the normal Mahalanobis distance)
-            self.weights[i] = (1 / (2*np.pi*np.sqrt(np.linalg.det(cov)))) * np.exp(-0.5 * Mahalanobis_distance) # TODO( hint: see normal distruntion , Multivariate Gaussian distributions)
+            Mahalanobis_distance_squared = np.dot(np.dot(d.T, np.linalg.inv(cov)), d) # TODO (hint- use the normal Mahalanobis distance)
+            self.weights[i] = (1 / (2*np.pi*np.sqrt(np.linalg.det(cov)))) * np.exp(-0.5 * Mahalanobis_distance_squared) # TODO( hint: see normal distruntion , Multivariate Gaussian distributions)
         self.weights += 1.0e-200  # for numerical stability
         self.weights /= sum(self.weights)
 
@@ -116,17 +114,16 @@ class ParticlesFilter:
         """
         law variance resampling
         """
-        # TODO
-        M = len(self.particles)
+
         ind = []
-        r = np.random.uniform() / M
-        c = self.particles[0, 3]  # weight of first particle
+        r = np.random.uniform() / self.numberOfParticles
+        c = self.weights[0]  # weight of first particle
         i = 0
-        for m in range(M):
-            U = r + (m) / M
+        for j in range(self.numberOfParticles):
+            U = r + (j / self.numberOfParticles)
             while U > c:
                 i += 1
-                c += self.particles[i, 3]
+                c += self.weights[i]
             ind.append(i)
         new_particles = self.particles[ind]
 
@@ -155,11 +152,12 @@ class ParticlesFilter:
             Zt = np.array([r, phi])
 
             self.apply(Zt, trueOdometry[timestamp])
-            if i % 10 == 0:
-                num_particles = self.particles.shape[0]
-                title = "pf_estimation_frame:{}_{}_particles".format(i, num_particles)
-                graphs.draw_pf_frame(trueTrajectory, self.history, trueLandmarks, self.particles,
-                              title.replace("_", " ").replace("pf", "Particle filter"))
+
+            # if i % 10 == 0:
+            #     num_particles = self.particles.shape[0]
+            #     title = "pf_estimation_frame:{}_{}_particles".format(i, num_particles)
+            #     graphs.draw_pf_frame(trueTrajectory, self.history, trueLandmarks, self.particles,
+            #                   title.replace("_", " ").replace("pf", "Particle filter"))
 
     @staticmethod
     def normalize_angle(angle):

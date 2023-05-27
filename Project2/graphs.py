@@ -56,4 +56,4 @@ def draw_pf_frame(trueTrajectory, measured_trajectory, trueLandmarks, particles,
     ax.set_aspect('equal', adjustable='box')
     ax.set_xlabel("X [m]", fontsize=10)
     ax.set_ylabel("Y [m]", fontsize=10)
-    ax.legend(['Ground Truth', 'Particle filter estimated trajectory', 'Landmarks', 'Particles and their heading'], prop={"size": 10}, loc="best")
+    ax.legend(['Ground Truth', 'Landmarks', 'Particles and their heading', 'Particle filter estimated trajectory'], prop={"size": 10}, loc="best")
