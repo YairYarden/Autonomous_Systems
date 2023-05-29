@@ -53,8 +53,16 @@ def Q1():
 
     # Build animation
     plt.close('all')
-    pf_animation = graphs.build_animation(trueTrajectory[:, 0:2], pf.history[:, 0:2])
+    num_frames = len(trueOdometry)
+    pf_animation = graphs.build_animation(trueTrajectory[:, 0:2], pf.history[:, 0:2], pf.particles_history[:, :, 0:2], num_frames)
     plt.show()
+
+    # Save animation
+    is_save_animation = True
+    if is_save_animation:
+        save_path = "../results/Q1/"
+        graphs.save_animation(pf_animation, save_path, "Particle_filter_animation")
+
     print("Question 1 is done")
 
 def Q2():

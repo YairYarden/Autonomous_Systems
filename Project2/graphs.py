@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 import numpy as np
 import matplotlib.animation as animation
-
+import os
 
 def plot_trajectory(trueTrajectory, trueLandmarks):
     plt.figure(figsize=(8, 8))
@@ -61,58 +61,55 @@ def draw_pf_frame(trueTrajectory, measured_trajectory, trueLandmarks, particles,
     ax.legend(['Ground Truth', 'Landmarks', 'Particles and their heading', 'Particle filter estimated trajectory'], prop={"size": 10}, loc="best")
 
 
-def build_animation(X_Y0, X_Y1, title="Particle Filter Animation", xlabel="x[m]", ylabel="y[m]", label0="GT", label1="PF"):
-    frames = []
+def build_animation(true_trajectory, estimated_trajectory, particles_history, num_frames, label1="True Trajectory", label2="Estimated Trajectory", label3="Particles"):
+    # Create figure and axis
+    fig, ax = plt.subplots()
 
-    fig = plt.figure()
-    fig.set_size_inches(10, 10)
-    ax = fig.add_subplot(1, 1, 1)
-    print("Creating animation")
+    # Set axis limits based on the arrays' data
+    # ax.set_xlim(np.min([np.min(true_trajectory[:, 0]), np.min(estimated_trajectory[:, 0]), np.min(particles_history[:, :, 0])]),
+    #             np.max([np.max(true_trajectory[:, 0]), np.max(estimated_trajectory[:, 0]), np.max(particles_history[:, :, 0])]))
+    # ax.set_ylim(np.min([np.min(true_trajectory[:, 1]), np.min(estimated_trajectory[:, 1]), np.min(particles_history[:, :, 1])]),
+    #             np.max([np.max(true_trajectory[:, 1]), np.max(estimated_trajectory[:, 1]), np.max(particles_history[:, :, 1])]))
 
-    x0, y0, x1, y1 = [], [], [], []
-    val0, = plt.plot([], [], 'b-', animated=True, label=label0)
-    val1, = plt.plot([], [], 'r-', animated=True, label=label1)
+    ax.set_xlim(-5, 11)
+    ax.set_ylim(-5, 12)
 
-    plt.legend()
+    # Initialize empty scatter plots
+    line1, = ax.plot([], [], linewidth=2, label=label1, color='b')
+    line2, = ax.plot([], [], label=label2, color='r')
+    scatter3 = ax.scatter([], [], label=label1, color='g')
+    x1, y1, x2, y2 = [], [], [], []
 
-    values = np.hstack((X_Y0, X_Y1))
+    ax.set_xlabel('X [m]')
+    ax.set_ylabel('Y [m]')
 
-    def init():
-        margin = 5
-        x_min = np.min(X_Y0[:, 0]) - margin
-        x_max = np.max(X_Y0[:, 0]) + margin
-        y_min = np.min(X_Y0[:, 1]) - margin
-        y_max = np.max(X_Y0[:, 1]) + margin
-        if (x_max - x_min) > (y_max - y_min):
-            h = (margin + x_max - x_min) / 2
-            c = (y_max + y_min) / 2
-            y_min = c - h
-            y_max = c + h
-        else:
-            w = (margin + y_max - y_min) / 2
-            c = (x_max + x_min) / 2
-            x_min = c - w
-            x_max = c + w
-        ax.set_xlim(x_min, x_max)
-        ax.set_ylim(y_min, y_max)
-        # ax.set_ylim(-6, 15)
-        ax.set_title(title)
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel(ylabel)
-        val0.set_data([], [])
-        val1.set_data([], [])
-
-        return val0, val1
-
+    # Animation update function
     def update(frame):
-        x0.append(frame[0])
-        y0.append(frame[1])
-        x1.append(frame[2])
-        y1.append(frame[3])
-        val0.set_data(x0, y0)
-        val1.set_data(x1, y1)
+        # Get x, y locations for the current frame
+        x1.append(true_trajectory[frame, 0])
+        y1.append(true_trajectory[frame, 1])
+        x2.append(estimated_trajectory[frame, 0])
+        y2.append(estimated_trajectory[frame, 1])
+        x3 = particles_history[frame, :, 0]
+        y3 = particles_history[frame, :, 1]
 
-        return val0, val1
+        # Update scatter plot data
+        line1.set_data(x1, y1)
+        line2.set_data(x2, y2)
+        scatter3.set_offsets(np.column_stack((x3, y3)))
 
-    anim = animation.FuncAnimation(fig, update, frames=values, init_func=init, interval=10, blit=True)
-    return anim
+        # Set title and frame number
+        ax.set_title(f"Frame: {frame + 1}/{num_frames}")
+
+        return line1, line2, scatter3
+
+    # Create animation
+    ani = animation.FuncAnimation(fig, update, frames=num_frames, interval=100)
+    ax.legend()
+    ax.grid(True)
+    return ani
+
+def save_animation(ani, basedir, file_name):
+    print("Saving animation")
+    ani.save(os.path.join(basedir, f'{file_name}.gif'), writer='pillow', fps=50)
+    print("Animation saved")
