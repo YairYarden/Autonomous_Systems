@@ -84,25 +84,25 @@ def Q2():
     Image_B = data_preparation.load_image(data, frame_B)
     # ------------------------------- #
     # Visualize the point clouds
-    # clouds = [pc_A, pc_B]  # TODO
-    # graphs.visualize_clouds(clouds, 'FullP- Before_ICPC')
-    # graphs.show_frame(Image_A, pc_A, 'A')
-    # graphs.show_frame(Image_B, pc_B, 'B')
+    clouds = [pc_A, pc_B]  # TODO
+    graphs.visualize_clouds(clouds, 'FullP- Before_ICPC')
+    graphs.show_frame(Image_A, pc_A, 'A')
+    graphs.show_frame(Image_B, pc_B, 'B')
     # ------------------------------- #
     # KDTree Analysis
-    # indices, _, _ = ICP.assign_closest_pairs_kdtree(pc_A, pc_B)  # TODO
-    # pc_target = pc_A
-    # pc_source = pc_B[indices, :]
-    # # choose the point clouds to visualize, by inserting to a list
-    # clouds = [pc_B, pc_source]
-    # graphs.visualize_clouds(clouds, 'Full_PC_NearestNeighbors')
+    indices, _, _ = ICP.assign_closest_pairs_kdtree(pc_A, pc_B)  # TODO
+    pc_target = pc_A
+    pc_source = pc_B[indices, :]
+    # choose the point clouds to visualize, by inserting to a list
+    clouds = [pc_B, pc_source]
+    graphs.visualize_clouds(clouds, 'Full_PC_NearestNeighbors')
     # ------------------------------- #
     # Run vanilla ICP on full point cloud
-    # num_iters_kd, errors_kd, pc_B_kd, final_R, final_t = ICP.icp(pc_A, pc_B, ICP.assign_closest_pairs_kdtree)
-    # graphs.show_results(num_iters_kd, errors_kd, pc_A, pc_B_kd, final_R, final_t, 'FullPC')
-    # # show final results
-    # clouds = [pc_A, pc_B_kd[-1]]
-    # graphs.visualize_clouds(clouds, 'ICP-Results')
+    num_iters_kd, errors_kd, pc_B_kd, final_R, final_t = ICP.icp(pc_A, pc_B, ICP.assign_closest_pairs_kdtree)
+    graphs.show_results(num_iters_kd, errors_kd, pc_A, pc_B_kd, final_R, final_t, 'FullPC')
+    # show final results
+    clouds = [pc_A, pc_B_kd[-1]]
+    graphs.visualize_clouds(clouds, 'ICP-Results')
     # ------------------------------- #
     # Filter the point cloud above minimal height
     pc_f_A = ICP.filter_pc(pc_A)
@@ -134,9 +134,17 @@ def Q2():
     clouds = [pc_A, pc_B_kd_f[-1]]
     graphs.visualize_clouds(clouds, 'Filter_PC_ICP-Results')
     # ------------------------------- #
-
+    # Run icp with K-NN function as the data associator
+    start_time = time.time()
+    num_iters_knn, errors_knn, pc_B_knn, final_R_f_nn, final_t_f_nn = ICP.icp(pc_f_A, pc_f_B, ICP.assign_closest_pairs_knn)
+    end_time = time.time()
+    elapsed_time_knn = end_time - start_time
+    print("Elapsed time: {:.4f} seconds".format(elapsed_time_knn))
+    graphs.show_results(num_iters_knn, errors_knn, pc_f_A, pc_B_knn, final_R_f_nn, final_t_f_nn, 'with K-Nearest Neighbors')
     # ------------------------------- #
-
+    # Analyze the results
+    graphs.icp_analysis(errors_kd, errors_kd_f, errors_knn, elapsed_time_kdree, elapsed_time_knn)
+    # ------------------------------- #
     print("Question 2 is done")
 
 def Q3():

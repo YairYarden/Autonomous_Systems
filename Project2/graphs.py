@@ -353,3 +353,40 @@ def show_frame(Image, pc, frame_name):
     axs[1].set_xlabel('x[m]')
     axs[1].set_ylabel('y[m]')
     plt.show()
+
+def icp_analysis(errors_kd, errors_kd_f, errors_knn, elapsed_time_kdree, elapsed_time_knn):
+    # print final errors
+    print("Final error of K-D Tree is: {} [m^2]".format(errors_kd[-1]))
+    print("Final error of K-D Tree with filtered PC is: {} [m^2]".format(errors_kd_f[-1]))
+    print("Final error of K-Nearest Neighbors with filtered PC is: {} [m^2]".format(errors_knn[-1]))
+
+    # Time consuming
+    print("Elapsed time kdree: {:.4f} seconds".format(elapsed_time_kdree))
+    print("Elapsed time knn: {:.4f} seconds".format(elapsed_time_knn))
+
+    # compare errors on a graph
+    plt.figure()
+    plt.title("ICP Errors of different methods vs Iterations")
+    plt.plot(range(1, 1 + len(errors_kd)), errors_kd, '-rx', markevery=[len(errors_kd) - 1], label='Full PC, K-D Tree')
+    plt.plot(range(1, 1 + len(errors_kd_f)), errors_kd_f, '-bx', markevery=[len(errors_kd_f) - 1],
+             label='Filtered PC, K-D Tree')
+    plt.plot(range(1, 1 + len(errors_knn)), errors_knn, '-kx', markevery=[len(errors_knn) - 1],
+             label='Filtered PC, K-Nearest Neighbors')
+    plt.xlabel("Iterations [a.u.]")
+    plt.ylabel("Error [m]")
+    plt.grid()
+    plt.legend()
+
+    # sqrt of errors
+    plt.figure()
+    plt.title("ICP Errors of different methods Vs Iterations")
+    plt.plot(range(1, 1 + len(errors_kd)), np.sqrt(errors_kd), '-rx', markevery=[len(errors_kd) - 1],
+             label='Full PC, K-D Tree')
+    plt.plot(range(1, 1 + len(errors_kd_f)), np.sqrt(errors_kd_f), '-bx', markevery=[len(errors_kd_f) - 1],
+             label='Filtered PC, K-D Tree')
+    plt.plot(range(1, 1 + len(errors_knn)), np.sqrt(errors_knn), '-kx', markevery=[len(errors_knn) - 1],
+             label='Filtered PC, K-Nearest Neighbors')
+    plt.xlabel("Iterations [a.u.]")
+    plt.ylabel("Error [m]")
+    plt.grid()
+    plt.legend()

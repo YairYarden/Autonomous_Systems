@@ -104,3 +104,16 @@ def filter_pc(pc, min_height = -1):
     indices = pc_filtered[:, 2] > min_height
     return pc_filtered[indices]
 
+
+def assign_closest_pairs_knn(pc_A, pc_B):
+    """Assign closest points into pairs of point clouds A and B via nearest neighbor using K-D Tree fucntion
+    return the indices of point cloud B."""
+
+    # create K-D Tree
+    tree = KDTree(pc_B, leaf_size=10) # TODO: use KDTREE function for Brute force (similar no NN), hint: change value of leaf_size parameter
+
+    # find the indices of point cloud B which are closest to point cloud A
+    # use query function, and return only 1 nearest neighbor.
+    dist, indices = tree.query(pc_A, k=1) # TODO
+
+    return indices.ravel(), tree, dist
