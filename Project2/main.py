@@ -68,6 +68,7 @@ def Q1():
     print("Question 1 is done")
 
 def Q2():
+    # ------------------------------- #
     # Load Data
     basedir = r'D:\\Masters Degree\\Courses\\Sensors In Autonomous Systems 0510-7951\\Homework\\course_ex1\\raw_data\\'
     date = '2011_09_26'
@@ -79,13 +80,28 @@ def Q2():
     pc_B = data_preparation.get_pc(data, frame_B)
     Image_A = data_preparation.load_image(data, frame_A)
     Image_B = data_preparation.load_image(data, frame_B)
-
+    # ------------------------------- #
     # Visualize the point clouds
     # clouds = [pc_A, pc_B]  # TODO
     # graphs.visualize_clouds(clouds, 'FullP- Before_ICPC')
-
-    graphs.show_frame(Image_A, pc_A, 'A')
-    graphs.show_frame(Image_B, pc_B, 'B')
+    # graphs.show_frame(Image_A, pc_A, 'A')
+    # graphs.show_frame(Image_B, pc_B, 'B')
+    # ------------------------------- #
+    # KDTree Analysis
+    # indices, _, _ = ICP.assign_closest_pairs_kdtree(pc_A, pc_B)  # TODO
+    # pc_target = pc_A
+    # pc_source = pc_B[indices, :]
+    # # choose the point clouds to visualize, by inserting to a list
+    # clouds = [pc_B, pc_source]
+    # graphs.visualize_clouds(clouds, 'Full_PC_NearestNeighbors')
+    # ------------------------------- #
+    # Run vanilla ICP on full point cloud
+    num_iters_kd, errors_kd, pc_B_kd, final_R, final_t = ICP.icp(pc_A, pc_B, ICP.assign_closest_pairs_kdtree)
+    graphs.show_results(num_iters_kd, errors_kd, pc_A, pc_B_kd, final_R, final_t, 'FullPC')
+    # show final results
+    clouds = [pc_A, pc_B_kd[-1]]     
+    graphs.visualize_clouds(clouds, 'ICP-Results')
+    # ------------------------------- #
     print("Question 2 is done")
 
 def Q3():
