@@ -17,6 +17,8 @@ import graphs
 from ParticlesFilter import ParticlesFilter
 
 import ICP
+import time
+
 np.random.seed(19)
 
 def Q1():
@@ -96,12 +98,45 @@ def Q2():
     # graphs.visualize_clouds(clouds, 'Full_PC_NearestNeighbors')
     # ------------------------------- #
     # Run vanilla ICP on full point cloud
-    num_iters_kd, errors_kd, pc_B_kd, final_R, final_t = ICP.icp(pc_A, pc_B, ICP.assign_closest_pairs_kdtree)
-    graphs.show_results(num_iters_kd, errors_kd, pc_A, pc_B_kd, final_R, final_t, 'FullPC')
-    # show final results
-    clouds = [pc_A, pc_B_kd[-1]]     
-    graphs.visualize_clouds(clouds, 'ICP-Results')
+    # num_iters_kd, errors_kd, pc_B_kd, final_R, final_t = ICP.icp(pc_A, pc_B, ICP.assign_closest_pairs_kdtree)
+    # graphs.show_results(num_iters_kd, errors_kd, pc_A, pc_B_kd, final_R, final_t, 'FullPC')
+    # # show final results
+    # clouds = [pc_A, pc_B_kd[-1]]
+    # graphs.visualize_clouds(clouds, 'ICP-Results')
     # ------------------------------- #
+    # Filter the point cloud above minimal height
+    pc_f_A = ICP.filter_pc(pc_A)
+    pc_f_B = ICP.filter_pc(pc_B)
+    # choose the point clouds to visualize, by inserting to a list
+    clouds = [pc_f_A, pc_f_B]
+    graphs.visualize_clouds(clouds, 'FilteredPC- before_icp')
+    # ------------------------------- #
+    # Run ICP with the filtered point clouds
+    max_dist = 10
+    indices, tree, dist = ICP.assign_closest_pairs_kdtree(pc_f_A, pc_f_B)
+    dist = dist.squeeze()
+    pc_target_f = pc_f_A
+    pc_source_f = pc_f_B[indices, :]
+    clouds = [pc_f_B, pc_source_f]
+    graphs.visualize_clouds(clouds, 'FilterPC-NearestNeighbors')
+    # ------------------------------- #
+    # Run icp with K-D Tree function as the data associator
+    start_time = time.time()
+    # Run ICP
+    num_iters_kd_f, errors_kd_f, pc_B_kd_f, final_R_f, final_t_f = ICP.icp(pc_f_A, pc_f_B, ICP.assign_closest_pairs_kdtree)
+    # Stop the timer
+    end_time = time.time()
+    # Calculate the elapsed time
+    elapsed_time_kdree = end_time - start_time
+    print("Elapsed time: {:.4f} seconds".format(elapsed_time_kdree))
+    graphs.show_results(num_iters_kd_f, errors_kd_f, pc_f_A, pc_B_kd_f, final_R_f, final_t_f, 'with K-D Tree, filtered Point Cloud')
+    # show final results
+    clouds = [pc_A, pc_B_kd_f[-1]]
+    graphs.visualize_clouds(clouds, 'Filter_PC_ICP-Results')
+    # ------------------------------- #
+
+    # ------------------------------- #
+
     print("Question 2 is done")
 
 def Q3():

@@ -97,3 +97,10 @@ def icp(pc_A, pc_B, assign_closest_pairs_func, converge_th = 0.001, max_iters = 
         prev_err = curr_err
 
     return i, errors, pcs_B_for_animation, R_total, t_total
+
+def filter_pc(pc, min_height = -1):
+    "return filtered point cloud - only points above the minimal height"
+    pc_filtered = pc.copy()
+    indices = pc_filtered[:, 2] > min_height
+    return pc_filtered[indices]
+
