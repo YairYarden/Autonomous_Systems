@@ -1,4 +1,5 @@
 import numpy as np
+import pykitti
 from PIL import Image
 import io
 import matplotlib.pyplot as plt
@@ -15,6 +16,7 @@ import data_preparation
 import graphs
 from ParticlesFilter import ParticlesFilter
 
+import ICP
 np.random.seed(19)
 
 def Q1():
@@ -41,7 +43,7 @@ def Q1():
     # Run Particle Filter
     # Initalize
     sigma_range = 0.1
-    sigma_bearing = 0.01
+    sigma_bearing = 0.1
     numberOfParticles = 1000
     pf = ParticlesFilter(trueLandmarks, sigma_r1, sigma_t, sigma_r2, sigma_range, sigma_bearing, numberOfParticles)
 
@@ -58,7 +60,7 @@ def Q1():
     plt.show()
 
     # Save animation
-    is_save_animation = True
+    is_save_animation = False
     if is_save_animation:
         save_path = "../results/Q1/"
         graphs.save_animation(pf_animation, save_path, "Particle_filter_animation")
@@ -66,11 +68,29 @@ def Q1():
     print("Question 1 is done")
 
 def Q2():
+    # Load Data
+    basedir = r'D:\\Masters Degree\\Courses\\Sensors In Autonomous Systems 0510-7951\\Homework\\course_ex1\\raw_data\\'
+    date = '2011_09_26'
+    drive = '0117'
+    frame_A = 5
+    frame_B = 9
+    data = pykitti.raw(basedir, date, drive)
+    pc_A = data_preparation.get_pc(data, frame_A)
+    pc_B = data_preparation.get_pc(data, frame_B)
+    Image_A = data_preparation.load_image(data, frame_A)
+    Image_B = data_preparation.load_image(data, frame_B)
+
+    # Visualize the point clouds
+    # clouds = [pc_A, pc_B]  # TODO
+    # graphs.visualize_clouds(clouds, 'FullP- Before_ICPC')
+
+    graphs.show_frame(Image_A, pc_A, 'A')
+    graphs.show_frame(Image_B, pc_B, 'B')
     print("Question 2 is done")
 
 def Q3():
     print("Question 3 is done")
 
 if __name__ == "__main__":
-    Q1()
-
+    # Q1()
+    Q2()

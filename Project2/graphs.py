@@ -3,7 +3,8 @@ from matplotlib.collections import LineCollection
 import numpy as np
 import matplotlib.animation as animation
 import os
-
+import plotly.graph_objects as go
+# ------------------- PART 1 - PARTICLE FILTER ------------------- #
 def plot_trajectory(trueTrajectory, trueLandmarks):
     plt.figure(figsize=(8, 8))
     plt.plot(trueTrajectory[:, 0], trueTrajectory[:, 1])
@@ -113,3 +114,242 @@ def save_animation(ani, basedir, file_name):
     print("Saving animation")
     ani.save(os.path.join(basedir, f'{file_name}.gif'), writer='pillow', fps=50)
     print("Animation saved")
+
+# ------------------- PART 2 - ICP ------------------- #
+palette = ['#FF1493', '#afd6fa']
+def plot_errors(errors, title):
+    plt.figure()
+    plt.title("ICP Error of {} vs Iterations".format(title))
+    plt.plot(range(1, 1+len(errors)), errors)
+    plt.xlabel("Iteration [a.u.]")
+    plt.ylabel("Error [m]")
+
+
+def visualize_clouds(clouds, fname):
+
+    data = []
+    for i, cloud in enumerate(clouds):
+        xdata = cloud[:, 0]
+        ydata = cloud[:, 1]
+        zdata = cloud[:, 2]
+
+        data.append(go.Scatter3d(x=xdata, y=ydata, z=zdata,
+            mode='markers',
+            marker=dict(
+              size=1,
+              color=palette[i],
+              opacity=1.0
+          ))
+        )
+
+      # Decide bounds
+    mega_cloud = np.vstack(clouds)
+    mega_centroid = np.average(mega_cloud, axis=0)
+    mega_max = np.amax(mega_cloud, axis=0)
+    mega_min = np.amin(mega_cloud, axis=0)
+    lower_bound = mega_centroid - (np.amax(mega_max - mega_min) / 2)
+    upper_bound = mega_centroid + (np.amax(mega_max - mega_min) / 2)
+
+    # Setup layout
+    grid_lines_color = 'rgb(127, 127, 127)'
+    layout = go.Layout(
+      scene=dict(
+          xaxis=dict(nticks=8,
+                  range=[lower_bound[0], upper_bound[0]],
+                  showbackground=True,
+                  backgroundcolor='rgb(30, 30, 30)',
+                  gridcolor=grid_lines_color,
+                  zerolinecolor=grid_lines_color),
+          yaxis=dict(nticks=8,
+                  range=[lower_bound[1], upper_bound[1]],
+                  showbackground=True,
+                  backgroundcolor='rgb(30, 30, 30)',
+                  gridcolor=grid_lines_color,
+                  zerolinecolor=grid_lines_color),
+          zaxis=dict(nticks=8,
+                  range=[lower_bound[2], upper_bound[2]],
+                  showbackground=True,
+                  backgroundcolor='rgb(30, 30, 30)',
+                  gridcolor=grid_lines_color,
+                  zerolinecolor=grid_lines_color),
+          xaxis_title="x (meters)",
+          yaxis_title="y (meters)",
+          zaxis_title="z (meters)"
+      ),
+      margin=dict(r=10, l=10, b=10, t=10),
+      paper_bgcolor='rgb(30, 30, 30)',
+      font=dict(
+          family="Courier New, monospace",
+          color=grid_lines_color
+      ),
+      legend=dict(
+          font=dict(
+              family="Courier New, monospace",
+              color='rgb(127, 127, 127)'
+          )
+      )
+    )
+
+    fig = go.Figure(data=data, layout=layout)
+    fig.show()
+
+def visualize_clouds_animation(pc_A, pc_B_list, fname, speed=100):
+    # Setup data
+    iteration_labels = [str(i) for i in range(len(pc_B_list))]
+    all_clouds = []
+    frames = []
+    num_samples = min(pc_A.shape[0], pc_B_list[0].shape[0])
+    subset_indices = np.random.choice(num_samples,
+                                int(num_samples / (len(pc_B_list) * 0.5)),
+                                replace=False)
+    for i, (label, pc_B) in enumerate(zip(iteration_labels, pc_B_list)):
+        data = []
+        clouds = [pc_A, pc_B]
+        for j, pc in enumerate(clouds):
+            xdata = pc[subset_indices, 0]
+            ydata = pc[subset_indices, 1]
+            zdata = pc[subset_indices, 2]
+
+            data.append(go.Scatter3d(x=xdata, y=ydata, z=zdata,
+                mode='markers',
+                marker=dict(
+                    size=1,
+                    color=palette[j],
+                    opacity=1.0
+                ))
+            )
+        frames.append(go.Frame(name=label, data=data))
+        all_clouds += clouds
+        if i == 0:
+            first_data = data
+
+    # Decide bounds
+    mega_cloud = np.vstack(all_clouds)
+    mega_centroid = np.average(mega_cloud, axis=1)
+    mega_max = np.amax(mega_cloud, axis=1)
+    mega_min = np.amin(mega_cloud, axis=1)
+    lower_bound = mega_centroid - (np.amax(mega_max - mega_min) / 2)
+    upper_bound = mega_centroid + (np.amax(mega_max - mega_min) / 2)
+
+    # Setup layout
+    grid_lines_color = 'rgb(127, 127, 127)'
+    layout = go.Layout(
+      scene=dict(
+          xaxis=dict(nticks=8,
+                  range=[lower_bound[0], upper_bound[0]],
+                  showbackground=True,
+                  backgroundcolor='rgb(30, 30, 30)',
+                  gridcolor=grid_lines_color,
+                  zerolinecolor=grid_lines_color),
+          yaxis=dict(nticks=8,
+                  range=[lower_bound[1], upper_bound[1]],
+                  showbackground=True,
+                  backgroundcolor='rgb(30, 30, 30)',
+                  gridcolor=grid_lines_color,
+                  zerolinecolor=grid_lines_color),
+          zaxis=dict(nticks=8,
+                  range=[lower_bound[2], upper_bound[2]],
+                  showbackground=True,
+                  backgroundcolor='rgb(30, 30, 30)',
+                  gridcolor=grid_lines_color,
+                  zerolinecolor=grid_lines_color),
+          xaxis_title="x (meters)",
+          yaxis_title="y (meters)",
+          zaxis_title="z (meters)"
+      ),
+      hovermode=False,
+      margin=dict(r=10, l=10, b=10, t=10),
+      paper_bgcolor='rgb(30, 30, 30)',
+      font=dict(
+          family="Courier New, monospace",
+          color=grid_lines_color
+      ),
+      sliders=[dict(
+          active=0,
+          yanchor="top",
+          xanchor="left",
+          currentvalue=dict(
+              font=dict(
+                  family="Courier New, monospace",
+                  color='rgb(30, 30, 30)'
+              ),
+              prefix="Step ",
+              visible=True,
+              xanchor="right"
+          ),
+          pad=dict(b=10, t=0),
+          len=0.95,
+          x=0.05,
+          y=0,
+          font=dict(
+              family="Courier New, monospace",
+              color='rgb(127, 127, 127)'
+          ),
+          steps=[dict(
+                  args=[[iteration_label], dict(
+                      frame=dict(duration=speed),
+                      mode="immediate"
+                  )],
+                  label=iteration_label,
+                  method="animate") for iteration_label in iteration_labels]
+      )],
+      updatemenus=[dict(
+          buttons=[dict(
+              args=[None, dict(
+                  frame=dict(duration=speed),
+                  fromcurrent=True
+              )],
+              label="Play",
+              method="animate"
+          )],
+          direction="left",
+          pad=dict(r=10, t=30),
+          showactive=False,
+          type="buttons",
+          x=0.05,
+          xanchor="right",
+          y=0,
+          yanchor="top",
+          font=dict(
+              family="Courier New, monospace",
+              color='rgb(127, 127, 127)'
+          )
+      )],
+      legend=dict(
+          font=dict(
+              family="Courier New, monospace",
+              color='rgb(127, 127, 127)'
+          )
+      )
+    )
+
+    fig = go.Figure(data=first_data, layout=layout, frames=frames)
+    fig.show()
+
+def show_results(i, errors, pc_A, pc_B_list,R,T, title):
+    # Print results
+    print("ICP of {} run for {} iterations".format(title, i))
+    print("Final Error is: {:.3f} [m]".format(errors[-1]))
+    # show R+T
+    print("ICP results: R:{} , T: {}".format(R,T))
+
+    # Plot errors
+    plot_errors(errors, title)
+
+    # show animation
+    visualize_clouds_animation(pc_A, pc_B_list, title)
+
+def show_frame(Image, pc, frame_name):
+    fig, axs = plt.subplots(2, 1, figsize=(8, 6))
+    axs[0].set_title("Frame " + frame_name)
+    axs[0].imshow(Image)
+    axs[1].scatter(pc[:, 0], pc[:, 1], c=-pc[:, 2], marker='.', s=0.5)
+    axs[1].scatter(0, 0, c='r', marker='x')
+    axs[1].set_title("Frame " + frame_name + " -BEV")
+    axs[1].set_xlim(-30, 30)
+    axs[1].set_ylim(-30, 30)
+    axs[1].axis('scaled')
+    axs[1].grid()
+    axs[1].set_xlabel('x[m]')
+    axs[1].set_ylabel('y[m]')
+    plt.show()

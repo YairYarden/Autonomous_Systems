@@ -1,6 +1,6 @@
 import numpy as np
 
-
+# ------------------- PART 1 - PARTICLE FILTER ------------------- #
 def read_landmarks(filename):
     # Reads the world definition and returns a list of landmarks, our 'map'.
     # .
@@ -81,3 +81,12 @@ def generate_measurement_odometry(trueOdometry, sigma_r1, sigma_t, sigma_r2):
         measured_trajectory[i + 1, :] = measured_trajectory[i, :] + dMotion
 
     return measured_trajectory
+
+# ------------------- PART 2 - ICP ------------------- #
+def get_pc(data, idx):
+    return data.get_velo(idx)[:, :3]
+
+def load_image(data,idx):
+    ### Get the image data
+    img_raw = data.get_cam2(idx) #TODO (hint- use get_cam2 in pykitti)
+    return img_raw
