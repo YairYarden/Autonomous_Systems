@@ -390,3 +390,4 @@ def icp_analysis(errors_kd, errors_kd_f, errors_knn, elapsed_time_kdree, elapsed
     plt.ylabel("Error [m]")
     plt.grid()
     plt.legend()
+
