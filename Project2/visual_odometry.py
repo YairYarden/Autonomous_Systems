@@ -33,7 +33,7 @@ class VisualOdometry:
         # Const
         MAX_FRAMES = 50
         frame_idx = -1
-        is_save_animation = False
+        is_save_animation = True
 
         prev_img = None
         prev_gt_pose = None
@@ -55,11 +55,11 @@ class VisualOdometry:
                 break
 
             # 2.a - Extract features from the previous and current frames
-            kp1, des1 = sift.detectAndCompute(prev_img, None)
-            kp2, des2 = sift.detectAndCompute(curr_img, None)
+            key_points_prev, descriptors_prev = sift.detectAndCompute(prev_img, None)
+            key_points_curr, descriptors_curr = sift.detectAndCompute(curr_img, None)
 
             # 2.b - Match features between the previous and current frames
-            pts1, pts2 = self.match_points_between_frames(kp1, des1, kp2, des2)
+            pts1, pts2 = self.match_points_between_frames(key_points_prev, descriptors_prev, key_points_curr, descriptors_curr)
 
             # 3 - Compute essential matrix
             E, _ = cv2.findEssentialMat(pts1, pts2, self.camera_intrinsic_mat, cv2.RANSAC)
@@ -85,13 +85,13 @@ class VisualOdometry:
 
             # Save for visualization
             if frame_idx == 0:
-                img_for_anim = cv2.drawKeypoints(prev_img, kp1, prev_img)
+                img_for_anim = cv2.drawKeypoints(prev_img, key_points_prev, prev_img)
                 img_list[0, :, :, :] = img_for_anim
-                key_points_history.append(kp1)
+                key_points_history.append(key_points_prev)
 
-            img_for_anim = cv2.drawKeypoints(curr_img, kp2, curr_img)
+            img_for_anim = cv2.drawKeypoints(curr_img, key_points_curr, curr_img)
             img_list[frame_idx + 1, :, :, :] = img_for_anim
-            key_points_history.append(kp2)
+            key_points_history.append(key_points_curr)
 
         # ------------------------------------------------------------------------------ #
         # Plot
@@ -100,13 +100,13 @@ class VisualOdometry:
         ax1.plot(err_vec)
         ax1.set_xlabel('Frame number')
         ax1.set_ylabel('Error [m]')
-        ax1.set_title('Euclidean Error vs frame number')
+        ax1.set_title('Euclidean Distance Error vs frame number')
         ax1.grid(True)
 
         fig2, ax2 = plt.subplots()
         ax2.set_title('GT vs estimated trajectory')
-        ax2.plot(gt_trajectory[:, 0], gt_trajectory[:, 1], 'b--', label='ground-truth')
-        ax2.plot(measured_trajectory[:, 0], measured_trajectory[:, 1], 'r-', label='estimated')
+        ax2.plot(gt_trajectory[:, 0], gt_trajectory[:, 1], 'b--', label='GT')
+        ax2.plot(measured_trajectory[:, 0], measured_trajectory[:, 1], 'r-', label='VO Estimated with scale')
         ax2.set_xlabel('X[m]')
         ax2.set_ylabel('Y[m]')
         ax2.grid(True)
@@ -114,7 +114,7 @@ class VisualOdometry:
 
         # Animation
         ani = self.build_animation(gt_trajectory[:, 0:2], measured_trajectory[:, 0:2], img_list,
-                                    'VO estimated vs ground-truth trajectory ', 'X[m]', 'Y[m]', 'ground-truth',
+                                    'VO estimated vs GT trajectory ', 'X[m]', 'Y[m]', 'GT',
                                     'estimated trajectory')
 
         if(is_save_animation):
@@ -125,8 +125,7 @@ class VisualOdometry:
         plt.show()
         cv2.destroyAllWindows()
 
-        return True
-        # return gt_trajectory, measured_trajectory, key_points_history
+        return gt_trajectory, measured_trajectory, key_points_history
 
     @staticmethod
     def match_points_between_frames(kp1, des1, kp2, des2):

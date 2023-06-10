@@ -165,6 +165,8 @@ class ProjectQuestions:
         vo_data = DataLoader(self.vo_data)
         vo = VisualOdometry(vo_data)
         vo.calc_trajectory()
+        # ------------------------------- #
+        print("Question 3 is done")
 
     def run(self):
         if self.question_number == 1:
