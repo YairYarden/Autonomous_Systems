@@ -112,7 +112,7 @@ def build_animation(true_trajectory, estimated_trajectory, particles_history, nu
 
 def save_animation(ani, basedir, file_name):
     print("Saving animation")
-    ani.save(os.path.join(basedir, f'{file_name}.gif'), writer='pillow', fps=50)
+    ani.save(os.path.join(basedir, f'{file_name}.gif'), writer='pillow', fps=10)
     print("Animation saved")
 
 # ------------------- PART 2 - ICP ------------------- #

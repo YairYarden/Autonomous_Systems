@@ -1,18 +1,12 @@
 import numpy as np
 import math
 import cv2
-from data_loader import DataLoader
-from camera import Camera
 import matplotlib.pyplot as plt
-import os
-from pathlib import Path
+
 import graphs
 import matplotlib.animation as animation
 import itertools
-
-# np.random.seed(333)
-
-
+import os
 class VisualOdometry:
 
     def __init__(self, vo_data):
@@ -36,7 +30,7 @@ class VisualOdometry:
         sift = cv2.SIFT_create()
 
         # Const
-        MAX_FRAMES = 30
+        MAX_FRAMES = 50
         frame_idx = -1
 
         prev_img = None
@@ -116,6 +110,13 @@ class VisualOdometry:
         distance = math.sqrt(np.linalg.norm(measured_trajectory - gt_trajectory))
         print('distance (estimated-gt) = ', distance)
 
+        # Animation
+        ani = self.build_animation(gt_trajectory[:, 0:2], measured_trajectory[:, 0:2], img_list,
+                                    'VO estimated vs ground-truth trajectory ', 'X[m]', 'Y[m]', 'ground-truth',
+                                    'estimated trajectory')
+        fig_save_path = r"D:\Masters Degree\Courses\Sensors In Autonomous Systems 0510-7951\Homework\Autonomous_Systems\results\Q3"
+        graphs.save_animation(ani, fig_save_path, 'Q3_GT_vs_estimated_trajectory_animation')
+
         # show plots
         plt.show()
         cv2.destroyAllWindows()
@@ -133,14 +134,12 @@ class VisualOdometry:
         matches = flann.knnMatch(des1, des2, k=2)
 
         # Apply ratio test
-        pts1, pts2, good = [], [], []
+        pts1, pts2 = [], []
         matches_mask = [[0, 0] for i in range(len(matches))]
 
-        # ratio test as per Lowe's paper
         for idx, (m, n) in enumerate(matches):
             if m.distance < 0.7 * n.distance:
                 matches_mask[idx] = [1, 0]
-                good.append([m])
                 pts2.append(kp2[m.trainIdx].pt)
                 pts1.append(kp1[m.queryIdx].pt)
 
@@ -149,8 +148,7 @@ class VisualOdometry:
 
         return pts1, pts2
 
-    def build_animation(self, X_Y0, X_Y1, img_array, kp_array, title, xlabel, ylabel, label0, label1):
-        frames = []
+    def build_animation(self, X_Y0, X_Y1, img_array, title, xlabel, ylabel, label0, label1):
         self.img_array = img_array
         self.frame_idx = 0
         fig = plt.figure()
@@ -191,7 +189,6 @@ class VisualOdometry:
             val0.set_data(x0, y0)
             val1.set_data(x1, y1)
             val2.set_array(next(itertools.islice(self.vo_data.images, self.frame_idx, None)))
-            # val2.set_data(next(itertools.islice(self.vo_data.images, self.frame_idx, None)))
             val2.set_data(self.img_array[self.frame_idx, :, :, :])
             self.frame_idx += 1
             return val0, val1, val2
