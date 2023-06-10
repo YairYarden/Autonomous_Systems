@@ -25,6 +25,7 @@ class VisualOdometry:
         # Init params
         gt_trajectory = np.zeros([1, 2])
         measured_trajectory = np.zeros([1, 2])
+        key_points_history = []
 
         # Feature Extraction
         sift = cv2.SIFT_create()
@@ -32,6 +33,7 @@ class VisualOdometry:
         # Const
         MAX_FRAMES = 50
         frame_idx = -1
+        is_save_animation = False
 
         prev_img = None
         prev_gt_pose = None
@@ -85,37 +87,39 @@ class VisualOdometry:
             if frame_idx == 0:
                 img_for_anim = cv2.drawKeypoints(prev_img, kp1, prev_img)
                 img_list[0, :, :, :] = img_for_anim
+                key_points_history.append(kp1)
 
             img_for_anim = cv2.drawKeypoints(curr_img, kp2, curr_img)
             img_list[frame_idx + 1, :, :, :] = img_for_anim
+            key_points_history.append(kp2)
 
         # ------------------------------------------------------------------------------ #
         # Plot
         err_vec = np.linalg.norm(measured_trajectory - gt_trajectory, axis=1)
+        fig1, ax1 = plt.subplots()
+        ax1.plot(err_vec)
+        ax1.set_xlabel('Frame number')
+        ax1.set_ylabel('Error [m]')
+        ax1.set_title('Euclidean Error vs frame number')
+        ax1.grid(True)
+
         fig2, ax2 = plt.subplots()
-        ax2.plot(err_vec)
-        ax2.set_xlabel('frame number')
-        ax2.set_ylabel('error [m]')
-        ax2.set_title('error vs frame number')
-
-        fig3, ax3 = plt.subplots()
-        fig3.suptitle('GT vs estimated trajectory')
-        ax3.plot(gt_trajectory[:, 0], gt_trajectory[:, 1], 'b--', label='ground-truth')
-        ax3.plot(measured_trajectory[:, 0], measured_trajectory[:, 1], 'r-', label='estimated')
-        ax3.set_xlabel('X[m]')
-        ax3.set_ylabel('Y[m]')
-        ax3.legend()
-
-        # calc euclidian distance between GT and Estimated trajectories
-        distance = math.sqrt(np.linalg.norm(measured_trajectory - gt_trajectory))
-        print('distance (estimated-gt) = ', distance)
+        ax2.set_title('GT vs estimated trajectory')
+        ax2.plot(gt_trajectory[:, 0], gt_trajectory[:, 1], 'b--', label='ground-truth')
+        ax2.plot(measured_trajectory[:, 0], measured_trajectory[:, 1], 'r-', label='estimated')
+        ax2.set_xlabel('X[m]')
+        ax2.set_ylabel('Y[m]')
+        ax2.grid(True)
+        ax2.legend()
 
         # Animation
         ani = self.build_animation(gt_trajectory[:, 0:2], measured_trajectory[:, 0:2], img_list,
                                     'VO estimated vs ground-truth trajectory ', 'X[m]', 'Y[m]', 'ground-truth',
                                     'estimated trajectory')
-        fig_save_path = r"D:\Masters Degree\Courses\Sensors In Autonomous Systems 0510-7951\Homework\Autonomous_Systems\results\Q3"
-        graphs.save_animation(ani, fig_save_path, 'Q3_GT_vs_estimated_trajectory_animation')
+
+        if(is_save_animation):
+            fig_save_path = r"D:\Masters Degree\Courses\Sensors In Autonomous Systems 0510-7951\Homework\Autonomous_Systems\results\Q3"
+            graphs.save_animation(ani, fig_save_path, 'Q3_GT_vs_estimated_trajectory_animation')
 
         # show plots
         plt.show()

@@ -1,7 +1,5 @@
 from project_questions import ProjectQuestions
-
 if __name__ == "__main__":
-
     question_number = 3
 
     vo_data = {}
