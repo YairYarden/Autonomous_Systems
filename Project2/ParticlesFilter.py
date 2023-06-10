@@ -49,6 +49,8 @@ class ParticlesFilter:
 
         # Estimate pose from best particle
         self.history = np.concatenate((self.history, self.bestKParticles(1).reshape(1, 3)), axis=0)
+        # self.history = np.concatenate((self.history, self.center_mass_K(10).reshape(1, 3)), axis=0)
+        # self.history = np.concatenate((self.history, self.median_mass_K(5).reshape(1, 3)), axis=0)
 
         # Resample particles
         self.resampleParticles()
@@ -106,7 +108,7 @@ class ParticlesFilter:
         for i, relatedLocations in enumerate(MeasurementPrediction):
             d = car_measurement - relatedLocations # TODO
             d[1] = ParticlesFilter.normalize_angle(d[1])
-            Mahalanobis_distance_squared = np.dot(np.dot(d.T, np.linalg.inv(cov)), d) # TODO (hint- use the normal Mahalanobis distance)
+            Mahalanobis_distance_squared = np.dot(np.dot(d.T, np.linalg.inv(cov)), d)
             self.weights[i] = (1 / (2*np.pi*np.sqrt(np.linalg.det(cov)))) * np.exp(-0.5 * Mahalanobis_distance_squared) # TODO( hint: see normal distruntion , Multivariate Gaussian distributions)
         self.weights += 1.0e-200  # for numerical stability
         self.weights /= sum(self.weights)
@@ -140,6 +142,12 @@ class ParticlesFilter:
         """
         for i, timestamp in enumerate(range(0, trueOdometry.__len__() - 1)):
 
+            # if i % 10 == 0:
+            #     num_particles = self.particles.shape[0]
+            #     title = "pf_estimation_frame:{}_{}_particles".format(i, num_particles)
+            #     graphs.draw_pf_frame(trueTrajectory, self.history, trueLandmarks, self.particles,
+            #                   title.replace("_", " ").replace("pf", "Particle filter"))
+
             # Observation model
             # calculate Zt - the range and bearing to the closest landmark as seen from the current true position of the robot
             closest_landmark_id = np.argmin(np.linalg.norm(trueLandmarks - trueTrajectory[i + 1, 0:2], axis=1)) # TODO (norma 1) hint (use, np.argmin,np.linalg.norm, trueLandmarks ,trueTrajectory[i + 1, 0:2])
@@ -154,11 +162,7 @@ class ParticlesFilter:
 
             self.apply(Zt, trueOdometry[timestamp])
 
-            # if i % 10 == 0:
-            #     num_particles = self.particles.shape[0]
-            #     title = "pf_estimation_frame:{}_{}_particles".format(i, num_particles)
-            #     graphs.draw_pf_frame(trueTrajectory, self.history, trueLandmarks, self.particles,
-            #                   title.replace("_", " ").replace("pf", "Particle filter"))
+
 
     @staticmethod
     def normalize_angle(angle):
@@ -189,3 +193,14 @@ class ParticlesFilter:
         bestK = indexes[:K]  # TODO (find the best K particles)
         return self.particles[bestK, :]
 
+    def center_mass_K(self, K):
+        indexes = np.argsort(-self.weights)  # TODO (use sort)
+        bestK = indexes[:K]  # TODO (find the best K particles)
+        best_particles_locs = self.particles[bestK, :]
+        return np.mean(best_particles_locs, axis=0)
+
+    def median_mass_K(self, K):
+        indexes = np.argsort(-self.weights)  # TODO (use sort)
+        bestK = indexes[:K]  # TODO (find the best K particles)
+        best_particles_locs = self.particles[bestK, :]
+        return np.median(best_particles_locs, axis=0)
