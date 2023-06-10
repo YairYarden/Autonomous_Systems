@@ -1,4 +1,4 @@
-# Part 1 & 2 Imports
+# General imports
 import numpy as np
 import pykitti
 import matplotlib.pyplot as plt
@@ -6,7 +6,11 @@ import data_preparation
 import graphs
 import time
 
+# Part 1 imports
 from ParticlesFilter import ParticlesFilter
+from sklearn.metrics import mean_squared_error
+
+# Part 2 Imports
 import ICP
 
 # -------------------------------------------------
@@ -53,13 +57,18 @@ class ProjectQuestions:
 
         # Run Particle Filter
         # Initalize
-        sigma_range = 0.1 # 1
+        sigma_range = 0.2 # 1
         sigma_bearing = 0.1
-        numberOfParticles = 500
+        numberOfParticles = 1000
         pf = ParticlesFilter(trueLandmarks, sigma_r1, sigma_t, sigma_r2, sigma_range, sigma_bearing, numberOfParticles)
 
         # Run particle filter
         pf.run(trueLandmarks, trueOdometry, trueTrajectory)
+
+        # Compute MSE
+        frame_delay = 10
+        mse = mean_squared_error(trueTrajectory[frame_delay:, 0:2], pf.history[frame_delay:, 0:2])
+        print("MSE: ", mse, "[m^2]")
 
         # Plot final frame
         graphs.draw_pf_frame(trueTrajectory, pf.history, trueLandmarks, pf.particles, "Final Frame")
