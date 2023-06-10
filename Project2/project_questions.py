@@ -11,22 +11,22 @@ import ICP
 
 # -------------------------------------------------
 # Part 3 imports
-# from visual_odometry import VisualOdometry
-# from data_loader import DataLoader
+from visual_odometry import VisualOdometry
+
+from data_loader import DataLoader
+import os
 
 np.random.seed(19)
 
 class ProjectQuestions:
-    def __init__(self):
-        pass
-    # def __init__(self, vo_data):
-    #     assert type(vo_data) is dict, "vo_data should be a dictionary"
-    #     assert all([val in list(vo_data.keys()) for val in
-    #                 ['sequence', 'dir']]), "vo_data must contain keys: ['sequence', 'dir']"
-    #     assert type(vo_data['sequence']) is int and (
-    #                 0 <= vo_data['sequence'] <= 10), "sequence must be an integer value between 0-10"
-    #     assert type(vo_data['dir']) is str and os.path.isdir(vo_data['dir']), "dir should be a directory"
-    #     self.vo_data = vo_data
+
+    def __init__(self, question_number, vo_data):
+        assert type(vo_data) is dict, "vo_data should be a dictionary"
+        assert all([val in list(vo_data.keys()) for val in ['sequence', 'dir']]), "vo_data must contain keys: ['sequence', 'dir']"
+        assert type(vo_data['sequence']) is int and (0 <= vo_data['sequence'] <= 10), "sequence must be an integer value between 0-10"
+        assert type(vo_data['dir']) is str and os.path.isdir(vo_data['dir']), "dir should be a directory"
+        self.question_number = question_number
+        self.vo_data = vo_data
 
     def Q1(self):
         # Read the data
@@ -161,12 +161,15 @@ class ProjectQuestions:
         # ------------------------------- #
         print("Question 2 is done")
 
-    # def Q3(self):
-    #     vo_data = DataLoader(self.vo_data)
-    #     vo = VisualOdometry(vo_data)
-    #     vo.calc_trajectory()
+    def Q3(self):
+        vo_data = DataLoader(self.vo_data)
+        vo = VisualOdometry(vo_data)
+        vo.calc_trajectory()
 
     def run(self):
-        self.Q1()
-        # self.Q2()
-        # self.Q3()
+        if self.question_number == 1:
+            self.Q1()
+        elif self.question_number == 2:
+            self.Q2()
+        else:
+            self.Q3()

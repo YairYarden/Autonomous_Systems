@@ -9,6 +9,7 @@ class Camera:
         self.intrinsics = intrinsics
         self.extrinsics = extrinsics
 
+    # ----------------------- #
     def get_intrinsics(self):
         return self.intrinsics
 

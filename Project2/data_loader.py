@@ -7,10 +7,11 @@ from camera import Camera
 class DataLoader:
     def __init__(self, vo_data):
         # read your data
-        poses_path = os.path.join(vo_data['dir'], "poses", f"{vo_data['sequence']:02d}.txt")  # change 11 to your number
-        calib_path = os.path.join(vo_data['dir'], "sequences", f"{vo_data['sequence']:02d}", "calib.txt")
-        times_path = os.path.join(vo_data['dir'], "sequences", f"{vo_data['sequence']:02d}", "times.txt")
-        img_dir = os.path.join(vo_data['dir'], "sequences", f"{vo_data['sequence']:02d}", "image_0")
+        # read your data
+        poses_path = os.path.join(vo_data['dir'], "poses", f"{vo_data['sequence']:02}.txt")
+        calib_path = os.path.join(vo_data['dir'], "sequences", f"{vo_data['sequence']:02}", "calib.txt")
+        times_path = os.path.join(vo_data['dir'], "sequences", f"{vo_data['sequence']:02}", "times.txt")
+        img_dir = os.path.join(vo_data['dir'], "sequences", f"{vo_data['sequence']:02}", "image_0")
 
         assert os.path.isfile(poses_path), "poses file does not exists"
         assert os.path.isfile(calib_path), "calib file does not exists"
@@ -59,6 +60,26 @@ class DataLoader:
         for line in lines:
             yield DataLoader.line2mat(line)
 
+    def make_mp4(self):
+        import cv2
+        import os
+
+        image_folder = self.img_dir
+        video_name = self.img_dir + '/video.avi'
+
+        images = [img for img in os.listdir(image_folder) if img.endswith(".png")]
+        frame = cv2.imread(os.path.join(image_folder, images[0]))
+        height, width, layers = frame.shape
+
+        video = cv2.VideoWriter(video_name, 0, 20, (width, height))
+
+        for image in images:
+            video.write(cv2.imread(os.path.join(image_folder, image)))
+
+        cv2.destroyAllWindows()
+        video.release()
+
+    # ------------------ #
     def get_camera(self):
         return self.cam
 
