@@ -31,9 +31,10 @@ class VisualOdometry:
         sift = cv2.SIFT_create()
 
         # Const
-        MAX_FRAMES = 50
+        MAX_FRAMES = np.min([5000, self.vo_data.N])
         frame_idx = -1
-        is_save_animation = True
+        is_show_animation = False
+        is_save_animation = False
 
         prev_img = None
         prev_gt_pose = None
@@ -51,7 +52,7 @@ class VisualOdometry:
             if frame_idx % 10 == 0:
                 print("Finished : ", 100 * (frame_idx / MAX_FRAMES), "% of frames")
 
-            if frame_idx > MAX_FRAMES:
+            if frame_idx >= MAX_FRAMES - 1:
                 break
 
             # 2.a - Extract features from the previous and current frames
@@ -113,11 +114,12 @@ class VisualOdometry:
         ax2.legend()
 
         # Animation
-        ani = self.build_animation(gt_trajectory[:, 0:2], measured_trajectory[:, 0:2], img_list,
-                                    'VO estimated vs GT trajectory ', 'X[m]', 'Y[m]', 'GT',
-                                    'estimated trajectory')
+        if is_show_animation:
+            ani = self.build_animation(gt_trajectory[:, 0:2], measured_trajectory[:, 0:2], img_list,
+                                        'VO estimated vs GT trajectory ', 'X[m]', 'Y[m]', 'GT',
+                                        'estimated trajectory')
 
-        if(is_save_animation):
+        if is_save_animation:
             fig_save_path = r"D:\Masters Degree\Courses\Sensors In Autonomous Systems 0510-7951\Homework\Autonomous_Systems\results\Q3"
             graphs.save_animation(ani, fig_save_path, 'Q3_GT_vs_estimated_trajectory_animation')
 
@@ -172,7 +174,7 @@ class VisualOdometry:
         def init():
             self.frame_idx = 0
             ax.set_xlim(-10, 700)
-            ax.set_ylim(-30, 1000)
+            ax.set_ylim(-50, 300)
             ax.set_title(title)
             ax.set_xlabel(xlabel)
             ax.set_ylabel(ylabel)

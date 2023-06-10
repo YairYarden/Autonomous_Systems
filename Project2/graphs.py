@@ -14,7 +14,7 @@ def plot_trajectory(trueTrajectory, trueLandmarks):
     plt.xlabel("X [m]", fontsize=10)
     plt.ylabel("Y [m]", fontsize=10)
     plt.legend(['Ground Truth', 'Landmarks'], prop={"size": 8}, loc="best")
-    plt.title('Ground trues trajectory and landmarks', fontsize=10)
+    plt.title('Ground truth trajectory and landmarks', fontsize=10)
 
 def plot_trajectory_and_measured_trajectory(trueTrajectory, measured_trajectory, trueLandmarks):
     plt.figure(figsize=(8, 8))
@@ -26,7 +26,7 @@ def plot_trajectory_and_measured_trajectory(trueTrajectory, measured_trajectory,
     plt.ylabel("Y [m]", fontsize=10)
     plt.legend(['Ground truth trajectory', 'Trajectory with gaussian noise in the odometry data', 'Landmarks'],
                prop={"size": 10}, loc="best")
-    plt.title('Ground trues trajectory, landmarks and noisy trajectory', fontsize=10)
+    plt.title('Ground truth trajectory, landmarks and noisy trajectory', fontsize=10)
 
 def draw_pf_frame(trueTrajectory, measured_trajectory, trueLandmarks, particles, title):
     """
@@ -62,7 +62,8 @@ def draw_pf_frame(trueTrajectory, measured_trajectory, trueLandmarks, particles,
     ax.legend(['Ground Truth', 'Landmarks', 'Particles and their heading', 'Particle filter estimated trajectory'], prop={"size": 10}, loc="best")
 
 
-def build_animation(true_trajectory, estimated_trajectory, particles_history, num_frames, label1="True Trajectory", label2="Estimated Trajectory", label3="Particles"):
+def build_animation(true_trajectory, estimated_trajectory, particles_history, landmarks, num_frames,
+                    label1="True Trajectory", label2="Estimated Trajectory", label3="Particles", label4="Landmarks"):
     # Create figure and axis
     fig, ax = plt.subplots()
 
@@ -78,7 +79,8 @@ def build_animation(true_trajectory, estimated_trajectory, particles_history, nu
     # Initialize empty scatter plots
     line1, = ax.plot([], [], linewidth=2, label=label1, color='b')
     line2, = ax.plot([], [], label=label2, color='r')
-    scatter3 = ax.scatter([], [], label=label1, color='g')
+    scatter3 = ax.scatter([], [], label=label3, color='g')
+    scatter4 = ax.scatter([], [], label=label4, color='blue', facecolors='none')
     x1, y1, x2, y2 = [], [], [], []
 
     ax.set_xlabel('X [m]')
@@ -93,16 +95,19 @@ def build_animation(true_trajectory, estimated_trajectory, particles_history, nu
         y2.append(estimated_trajectory[frame, 1])
         x3 = particles_history[frame, :, 0]
         y3 = particles_history[frame, :, 1]
+        x4 = landmarks[:, 0]
+        y4 = landmarks[:, 1]
 
         # Update scatter plot data
         line1.set_data(x1, y1)
         line2.set_data(x2, y2)
         scatter3.set_offsets(np.column_stack((x3, y3)))
+        scatter4.set_offsets(np.column_stack((x4, y4)))
 
         # Set title and frame number
         ax.set_title(f"Frame: {frame + 1}/{num_frames}")
 
-        return line1, line2, scatter3
+        return line1, line2, scatter3, scatter4
 
     # Create animation
     ani = animation.FuncAnimation(fig, update, frames=num_frames, interval=100)

@@ -16,7 +16,7 @@ from visual_odometry import VisualOdometry
 from data_loader import DataLoader
 import os
 
-np.random.seed(19)
+np.random.seed(2)
 
 class ProjectQuestions:
 
@@ -53,9 +53,9 @@ class ProjectQuestions:
 
         # Run Particle Filter
         # Initalize
-        sigma_range = 0.1
+        sigma_range = 0.1 # 1
         sigma_bearing = 0.1
-        numberOfParticles = 1000
+        numberOfParticles = 500
         pf = ParticlesFilter(trueLandmarks, sigma_r1, sigma_t, sigma_r2, sigma_range, sigma_bearing, numberOfParticles)
 
         # Run particle filter
@@ -68,7 +68,7 @@ class ProjectQuestions:
         plt.close('all')
         num_frames = len(trueOdometry)
         pf_animation = graphs.build_animation(trueTrajectory[:, 0:2], pf.history[:, 0:2],
-                                              pf.particles_history[:, :, 0:2], num_frames)
+                                              pf.particles_history[:, :, 0:2], trueLandmarks, num_frames)
         plt.show()
 
         # Save animation

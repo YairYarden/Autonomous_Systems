@@ -47,6 +47,7 @@ class ParticlesFilter:
         # Sensor correction
         self.weightParticles(Zt, ParticlesLocation)
 
+        # Estimate pose from best particle
         self.history = np.concatenate((self.history, self.bestKParticles(1).reshape(1, 3)), axis=0)
 
         # Resample particles
@@ -61,18 +62,18 @@ class ParticlesFilter:
         the particles will be updated with the true odometry control command
         in addition, each particle will separately be added with Gaussian noise to its movement
         """
-        dr1 = np.repeat(odometry['r1'], self.numberOfParticles) + np.random.normal(0, self.sigma_r1, self.numberOfParticles) # TODO (hint- use the input odometry + noise)
+        dr1 = np.repeat(odometry['r1'], self.numberOfParticles) + np.random.normal(0, self.sigma_r1, self.numberOfParticles)
         dr1 = dr1.reshape(-1, 1)
-        dt = np.repeat(odometry['t'], self.numberOfParticles)  + np.random.normal(0, self.sigma_t, self.numberOfParticles) # TODO  (hint- use the input odometry + noise)
-        dt = dt.reshape(-1,1)
-        dr2 = np.repeat(odometry['r2'], self.numberOfParticles)  + np.random.normal(0, self.sigma_r2, self.numberOfParticles) # TODO (hint- use the input odometry + noise)
+        dt = np.repeat(odometry['t'], self.numberOfParticles) + np.random.normal(0, self.sigma_t, self.numberOfParticles)
+        dt = dt.reshape(-1, 1)
+        dr2 = np.repeat(odometry['r2'], self.numberOfParticles) + np.random.normal(0, self.sigma_r2, self.numberOfParticles)
         dr2 = dr2.reshape(-1, 1)
         theta = self.particles[:, 2].reshape(-1, 1)
 
         dMotion = np.concatenate((
             dt * np.cos(theta + dr1),
             dt * np.sin(theta + dr1),
-            dr1 + dr2), axis=1)  #TODO fill odometer model
+            dr1 + dr2), axis=1)
         self.particles = self.particles + dMotion
         self.particles[:, 2] = self.normalize_angles_array(self.particles[:, 2])
 
@@ -145,7 +146,7 @@ class ParticlesFilter:
             ClosetLandmarkLocation = trueLandmarks[closest_landmark_id] # TODO (hint use truelocation)
             dist_xy = trueLandmarks[closest_landmark_id] - trueTrajectory[i + 1, 0:2]
             r = np.linalg.norm(dist_xy) # TODO (norma 1)
-            phi = np.arctan2(ClosetLandmarkLocation[1] - trueTrajectory[i+1,1], ClosetLandmarkLocation[0]-trueTrajectory[i+1,0]) - trueTrajectory[i+1, 2] # TODO
+            phi = np.arctan2(ClosetLandmarkLocation[1] - trueTrajectory[i+1, 1], ClosetLandmarkLocation[0] - trueTrajectory[i+1, 0]) - trueTrajectory[i+1, 2] # TODO
             r += float(np.random.normal(0, self.sigma_range, 1)) # TODO (add noise)
             phi += float(np.random.normal(0, self.sigma_bearing, 1)) # TODO (add noise)
             phi = self.normalize_angle(phi) # normalize (add noise)
